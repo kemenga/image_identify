@@ -1,0 +1,283 @@
+{
+  "status": "detected",
+  "reason": null,
+  "detections": [
+    {
+      "type": "time_group",
+      "label": "时间篡改",
+      "line_index": 10,
+      "bbox": [
+        584,
+        898,
+        157,
+        49
+      ],
+      "char_indices": [
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "score": 10.4978,
+      "detail": {
+        "line_box": [
+          91,
+          891,
+          790,
+          62
+        ],
+        "delimiter_positions": [
+          2
+        ],
+        "char_scores": [
+          0.7413,
+          1.1923,
+          3.4736,
+          0.9746,
+          0.9387
+        ],
+        "internal_scores": [
+          5.4098,
+          0.4273,
+          2.8,
+          0.4,
+          6.0969
+        ],
+        "context_bonus": 0.7,
+        "support_count": 5,
+        "raw_document_score": 10.2433,
+        "fused_score": 10.4978,
+        "evidence": {
+          "local_ela": 0.0036,
+          "local_noise": 0.0867,
+          "global_ela": 0.0065,
+          "global_noise": 0.1638,
+          "document_score": 0.8003
+        }
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        739,
+        702,
+        19,
+        12
+      ],
+      "char_indices": [],
+      "score": 9.5505,
+      "detail": {
+        "raw_score": 8.2514,
+        "global_score": 2.4229,
+        "row_score": 11.8237,
+        "support_count": 1,
+        "component_count": 1,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 9.191,
+        "fused_score": 9.5505,
+        "evidence": {
+          "local_ela": 0.0044,
+          "local_noise": 0.1731,
+          "global_ela": 0.0065,
+          "global_noise": 0.1638,
+          "document_score": 0.8003
+        }
+      }
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        456,
+        528,
+        24,
+        48
+      ],
+      "char_indices": [],
+      "score": 32.7352,
+      "detail": {
+        "window_size": 24,
+        "raw_score": 275.3881,
+        "context_score": 0.1567,
+        "final_score": 275.4978,
+        "support_count": 2,
+        "raw_document_score": 32.0646,
+        "fused_score": 32.7352,
+        "evidence": {
+          "local_ela": 0.0191,
+          "local_noise": 0.4127,
+          "global_ela": 0.0065,
+          "global_noise": 0.1638,
+          "document_score": 0.8003
+        }
+      }
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        780,
+        984,
+        24,
+        24
+      ],
+      "char_indices": [],
+      "score": 32.1323,
+      "detail": {
+        "window_size": 24,
+        "raw_score": 270.1434,
+        "context_score": 0.0857,
+        "final_score": 270.2034,
+        "support_count": 1,
+        "raw_document_score": 31.419,
+        "fused_score": 32.1323,
+        "evidence": {
+          "local_ela": 0.0069,
+          "local_noise": 0.4645,
+          "global_ela": 0.0065,
+          "global_noise": 0.1638,
+          "document_score": 0.8003
+        }
+      }
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        588,
+        300,
+        24,
+        48
+      ],
+      "char_indices": [],
+      "score": 30.3985,
+      "detail": {
+        "window_size": 24,
+        "raw_score": 255.4602,
+        "context_score": 0.3652,
+        "final_score": 255.5378,
+        "support_count": 2,
+        "raw_document_score": 29.7437,
+        "fused_score": 30.3985,
+        "evidence": {
+          "local_ela": 0.0059,
+          "local_noise": 0.4172,
+          "global_ela": 0.0065,
+          "global_noise": 0.1638,
+          "document_score": 0.8003
+        }
+      }
+    }
+  ],
+  "candidate_count": 58,
+  "top_candidates": [
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        456,
+        528,
+        24,
+        48
+      ],
+      "score": 32.7352
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        780,
+        984,
+        24,
+        24
+      ],
+      "score": 32.1323
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        588,
+        300,
+        24,
+        48
+      ],
+      "score": 30.3985
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        720,
+        816,
+        24,
+        24
+      ],
+      "score": 30.3199
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        108,
+        552,
+        24,
+        24
+      ],
+      "score": 30.0552
+    },
+    {
+      "type": "region_anomaly",
+      "label": "局部篡改",
+      "line_index": -1,
+      "bbox": [
+        876,
+        456,
+        24,
+        24
+      ],
+      "score": 30.0163
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        648,
+        1077,
+        37,
+        16
+      ],
+      "score": 12.3044
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        859,
+        446,
+        55,
+        28
+      ],
+      "score": 12.2246
+    }
+  ],
+  "evidence": {
+    "ela_score": 0.0065,
+    "noise_score": 0.1638,
+    "document_score": 0.8003
+  },
+  "evidence_artifacts": {}
+}
