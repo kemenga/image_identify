@@ -10,7 +10,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from detector import UniversalTamperDetector
+from detector import TamperRegion, UniversalTamperDetector
 from evaluation import bbox_iou, evaluate_dataset, extract_ground_truth_boxes
 
 
@@ -42,6 +42,60 @@ class UniversalTamperDetectorTest(unittest.TestCase):
         detector = UniversalTamperDetector()
         return detector.detect(str(sample_image_path(image_name)))
 
+    def _report_threshold_candidates(self) -> list[TamperRegion]:
+        candidates: list[TamperRegion] = []
+        for index, score in enumerate((11.0, 9.0, 7.0, 5.0, 3.0)):
+            candidates.append(
+                TamperRegion(
+                    detection_type="text_noise_anomaly",
+                    label="噪声篡改",
+                    bbox=(40 + index * 120, 60, 28, 24),
+                    score=score,
+                    detail={
+                        "zone": "evidence_text_noise_refinement",
+                        "support_count": 3,
+                        "evidence_contrast": 3.4,
+                        "evidence_window_score": 0.65,
+                        "evidence": {"local_noise": 0.35},
+                    },
+                    char_indices=[index * 10, index * 10 + 1, index * 10 + 2],
+                )
+            )
+        return candidates
+
+    def _ground_truth_boxes(self, image_name: str) -> list[tuple[int, int, int, int]]:
+        image_path = sample_image_path(image_name)
+        answer_path = image_path.with_name(f"{image_path.stem}检测结果{image_path.suffix}")
+        boxes, _ = extract_ground_truth_boxes(image_path, answer_path)
+        return boxes
+
+    def _assert_detections_match_ground_truth(
+        self,
+        image_name: str,
+        detections: list[TamperRegion],
+        expected_types: list[str],
+        min_iou: float = 0.3,
+    ) -> None:
+        ground_truth_boxes = self._ground_truth_boxes(image_name)
+        self.assertEqual([item.detection_type for item in detections], expected_types)
+        for detection in detections:
+            best_iou = max(
+                bbox_iou(ground_truth_box, detection.bbox)
+                for ground_truth_box in ground_truth_boxes
+            )
+            self.assertGreaterEqual(
+                best_iou,
+                min_iou,
+                f"{image_name} 的高阈值候选 {detection.detection_type} {detection.bbox} 未命中标准答案",
+            )
+        for ground_truth_box in ground_truth_boxes:
+            best_iou = max(bbox_iou(ground_truth_box, detection.bbox) for detection in detections)
+            self.assertGreaterEqual(
+                best_iou,
+                min_iou,
+                f"{image_name} 的标准答案框 {ground_truth_box} 未被高阈值结果覆盖",
+            )
+
     def test_screenshot_detects_time_region(self) -> None:
         result = self._detect("截图.png")
         self.assertEqual(result.status, "detected")
@@ -52,6 +106,9 @@ class UniversalTamperDetectorTest(unittest.TestCase):
         self.assertIn("noise_score", result.evidence)
         self.assertIn("document_score", result.evidence)
         self.assertEqual(result.evidence_artifacts, {})
+        self.assertEqual(result.threshold_score_mode, "report_confidence")
+        self.assertIn("threshold_score", result.detections[0].detail)
+        self.assertIn("threshold_score_mode", result.detections[0].detail)
 
     def test_receipt_detects_digit_region_first(self) -> None:
         result = self._detect("票据.png")
@@ -100,8 +157,11 @@ class UniversalTamperDetectorTest(unittest.TestCase):
             self.assertEqual(report["evidence_artifacts"], {})
             self.assertIn("top_candidates", report)
             self.assertIn("reportable_candidate_count", report)
+            self.assertIn("threshold_score_mode", report)
+            self.assertIn("threshold_score_value", report)
             self.assertTrue(report["detections"])
             self.assertLessEqual(len(report["top_candidates"]), report["reportable_candidate_count"])
+            self.assertIn("threshold_score", report["detections"][0]["detail"])
 
     def test_detector_accepts_tunable_overrides(self) -> None:
         detector = UniversalTamperDetector(
@@ -109,6 +169,7 @@ class UniversalTamperDetectorTest(unittest.TestCase):
             detector_overrides={
                 "GLOBAL_EVIDENCE_WEIGHT": 1.1,
                 "MAX_REPORT_CANDIDATES": 3,
+                "REPORT_CONFIDENCE_THRESHOLD": 66.0,
             },
             document_detector_overrides={
                 "TEXT_NOISE_THRESHOLD": 5.2,
@@ -118,6 +179,7 @@ class UniversalTamperDetectorTest(unittest.TestCase):
         )
         self.assertEqual(detector.GLOBAL_EVIDENCE_WEIGHT, 1.1)
         self.assertEqual(detector.MAX_REPORT_CANDIDATES, 3)
+        self.assertEqual(detector.REPORT_CONFIDENCE_THRESHOLD, 66.0)
         self.assertEqual(detector.document_detector.TEXT_NOISE_THRESHOLD, 5.2)
         self.assertEqual(detector.document_detector.METHOD_WEIGHTS["stroke"], 1.6)
         self.assertEqual(detector.document_detector.SPECIAL_RULE_TYPES, {"digit_window", "time_group"})
@@ -136,6 +198,8 @@ class UniversalTamperDetectorTest(unittest.TestCase):
                     str(report_path),
                     "--detector-global-evidence-weight",
                     "1.05",
+                    "--detector-report-confidence-threshold",
+                    "66",
                     "--document-text-noise-threshold",
                     "5.1",
                     "--document-method-weight-stroke",
@@ -150,6 +214,98 @@ class UniversalTamperDetectorTest(unittest.TestCase):
             self.assertTrue(report_path.exists())
             self.assertIn("融合层参数覆盖", completed.stdout)
             self.assertIn("文档规则层参数覆盖", completed.stdout)
+
+    def test_single_report_threshold_can_reduce_output_boxes(self) -> None:
+        image_path = str(sample_image_path("截图.png"))
+        baseline = UniversalTamperDetector().detect(image_path, max_detections=8)
+        tightened = UniversalTamperDetector(
+            detector_overrides={"REPORT_CONFIDENCE_THRESHOLD": 999.0}
+        ).detect(image_path, max_detections=8)
+        self.assertGreaterEqual(len(baseline.detections), len(tightened.detections))
+        self.assertFalse(tightened.detections)
+
+    def test_report_threshold_lowering_increases_reportable_box_count(self) -> None:
+        candidates = self._report_threshold_candidates()
+        best_time_candidate = UniversalTamperDetector._best_candidate_of_type(candidates, "time_group")
+        best_digit_candidate = UniversalTamperDetector._best_candidate_of_type(candidates, "digit_window")
+        has_strong_refinement = any(
+            UniversalTamperDetector._is_strong_evidence_refinement(candidate)
+            for candidate in candidates
+            if not UniversalTamperDetector._is_special_scene_conflicting_refinement(
+                candidate,
+                best_time_candidate,
+                best_digit_candidate,
+            )
+        )
+        confidences = sorted(
+            [
+                UniversalTamperDetector._single_threshold_score(
+                    candidate,
+                    has_strong_refinement,
+                    best_time_candidate,
+                    best_digit_candidate,
+                )
+                for candidate in candidates
+            ],
+            reverse=True,
+        )
+        threshold_between_second_and_third = (confidences[1] + confidences[2]) / 2
+
+        tightened = UniversalTamperDetector._reportable_candidates(
+            candidates,
+            max_items=len(candidates),
+            min_confidence=threshold_between_second_and_third,
+            single_threshold_mode=True,
+        )
+        loosened = UniversalTamperDetector._reportable_candidates(
+            candidates,
+            max_items=len(candidates),
+            min_confidence=0.0,
+            single_threshold_mode=True,
+        )
+
+        self.assertEqual(len(tightened), 2)
+        self.assertEqual(len(loosened), len(candidates))
+        self.assertLess(len(tightened), len(loosened))
+
+    def test_low_report_threshold_is_limited_by_max_items_not_type_caps(self) -> None:
+        candidates = self._report_threshold_candidates()
+
+        selected = UniversalTamperDetector._reportable_candidates(
+            candidates,
+            max_items=3,
+            min_confidence=0.0,
+            single_threshold_mode=True,
+        )
+
+        self.assertEqual(len(selected), 3)
+
+    def test_high_report_threshold_keeps_ground_truth_candidates(self) -> None:
+        high_threshold = 95.0
+
+        screenshot = UniversalTamperDetector(
+            detector_overrides={"REPORT_CONFIDENCE_THRESHOLD": high_threshold}
+        ).detect(str(sample_image_path("截图.png")), max_detections=8)
+        self._assert_detections_match_ground_truth("截图.png", screenshot.detections, ["time_group"])
+
+        receipt = UniversalTamperDetector(
+            detector_overrides={"REPORT_CONFIDENCE_THRESHOLD": high_threshold}
+        ).detect(str(sample_image_path("票据.png")), max_detections=8)
+        self._assert_detections_match_ground_truth("票据.png", receipt.detections, ["digit_window"])
+
+        sample_300 = UniversalTamperDetector(
+            detector_overrides={"REPORT_CONFIDENCE_THRESHOLD": high_threshold}
+        ).detect(str(sample_image_path("300.png")), max_detections=8)
+        self._assert_detections_match_ground_truth("300.png", sample_300.detections, ["text_noise_anomaly"])
+
+        sample_400 = UniversalTamperDetector(
+            detector_overrides={"REPORT_CONFIDENCE_THRESHOLD": high_threshold}
+        ).detect(str(sample_image_path("400.png")), max_detections=8)
+        self._assert_detections_match_ground_truth(
+            "400.png",
+            sample_400.detections,
+            ["text_noise_anomaly", "text_noise_anomaly"],
+        )
 
     def test_api_writes_evidence_heatmaps(self) -> None:
         detector = UniversalTamperDetector()

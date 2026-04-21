@@ -513,3 +513,229 @@
 - 2026-04-21 工具：`/opt/anaconda3/bin/python -m unittest test_detector.py` 和 `/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
   参数：执行全量回归
   输出摘要：参数接线本身未报错，但由于 `400.png` 已纳入当前 `data/` 评测集，整体召回仍为 `0.7857`，原有 `0.875` 数据集门槛断言继续失败
+
+## 过程记录 - REPORT_CONFIDENCE_THRESHOLD 回归测试与文档
+
+时间：2026-04-21 10:17:22 CST
+
+### 工具限制记录
+
+- 当前会话未提供 `sequential-thinking`、`shrimp-task-manager`、`desktop-commander`、`context7`、`github.search_code` 工具。
+- 按项目要求记录替代方案：使用本地 `rg`、`sed`、`git diff` 完成代码检索、相似实现阅读和差异确认；本轮不引入新编程库，因此未查询外部库文档。
+
+### 编码前检查 - REPORT_CONFIDENCE_THRESHOLD 回归测试与文档
+
+时间：2026-04-21 10:17:22 CST
+
+□ 已查阅上下文摘要文件：`.codex/context-summary-report-confidence-threshold-regression.md`
+□ 将使用以下可复用组件：
+
+- `detector.py::TamperRegion`：构造稳定的合成候选。
+- `detector.py::UniversalTamperDetector._reportable_candidates`：验证最终报告筛选链路。
+- `detector.py::UniversalTamperDetector._report_confidence`：动态计算阈值分界，减少硬编码。
+- `test_detector.py` 现有 `unittest` 结构：保持测试风格一致。
+
+□ 将遵循命名约定：测试函数继续使用 `test_...`，辅助函数使用 `_...`。
+□ 将遵循代码风格：标准库、第三方、本地模块分组导入，断言使用 `self.assert...`。
+□ 确认不重复造轮子，证明：已检查 `test_detector.py` 中参数覆盖、CLI 覆盖和高阈值清空用例，确认缺少低阈值数量单调性和 `_report_limit` 链路回归。
+
+## 过程记录 - 单阈值最终输出控制集成验收
+
+时间：2026-04-21 10:31:15 CST
+
+- 工具：子 agent `Planck`
+  参数：补充 `REPORT_CONFIDENCE_THRESHOLD` 的回归测试和文档说明
+  输出摘要：新增低阈值数量增长、显式上限截断测试，并记录低阈值被 `_report_limit` 压成 2 个框的失败风险
+- 工具：子 agent `Gibbs`
+  参数：尝试修改 `detector.py` 与 `main.py`
+  输出摘要：执行超时且被主 agent 关闭；其中实验性默认宽松模式会导致评测误报升高，主 agent 已回收并修正
+- 工具：`apply_patch`
+  参数：修改 `detector.py` 与 `main.py`
+  输出摘要：新增 `single_threshold_mode`，仅在显式传入 `REPORT_CONFIDENCE_THRESHOLD` 时启用统一阈值模式；默认 API 和 `evaluation.py` 继续走严格报告过滤
+- 工具：`/opt/anaconda3/bin/python -m unittest test_detector.py`
+  参数：执行完整回归
+  输出摘要：19 项测试全部通过，`Ran 19 tests in 139.099s`
+- 工具：`/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+  参数：执行标准答案评测
+  输出摘要：`recall=0.9286`，标准答案召回未回退
+- 工具：阈值阶梯脚本
+  参数：对 `data/400.png` 依次测试阈值 `0、50、60、68、80、95、999`
+  输出摘要：最终框数量分别为 `11、9、3、3、3、2、0`，确认单阈值能控制输出数量
+
+## 过程记录 - 高阈值保真修复
+
+时间：2026-04-21 11:39:32 CST
+
+- 工具：子 agent `Aquinas`
+  参数：补高阈值保真测试和文档
+  输出摘要：补齐高阈值专项断言和文档说明，暴露出票据、截图、`300/400` 在高阈值下会留下错误候选的失败风险
+- 工具：子 agent `Pasteur`
+  参数：继续尝试高阈值排序修复
+  输出摘要：主代理完成核心修复后主动关闭，避免并行写入冲突
+- 工具：`apply_patch`
+  参数：修改 `detector.py`
+  输出摘要：为单阈值模式新增高阈值质量加权，优先保留 `time_group`、最佳 `digit_window`、`*_precise`、`invoice_*`、`embedded_id_photo` 和严格通过的 `evidence_text_noise_refinement`
+- 工具：`/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_high_report_threshold_keeps_ground_truth_candidates`
+  参数：执行高阈值专项回归
+  输出摘要：通过，`截图 -> time_group`、`票据 -> digit_window`、`300/400 -> text_noise_anomaly`
+- 工具：`/opt/anaconda3/bin/python -m unittest test_detector.py`
+  参数：执行完整单元测试
+  输出摘要：20 项测试全部通过，`Ran 20 tests in 181.595s`
+- 工具：`/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+  参数：执行标准答案评测
+  输出摘要：`recall=0.9286`，整体评测未回退
+- 工具：阈值阶梯脚本
+  参数：检查 `400.png`、`截图.png`、`票据.png` 在不同阈值下的输出
+  输出摘要：`400.png` 在 `95` 时保留 2 个真实噪声框；`截图.png` 在 `68/95` 都保留 `time_group`；`票据.png` 在 `95` 时收敛为单个 `digit_window`
+
+### 执行记录
+
+- 10:18 工具：`apply_patch`
+  参数：修改 `test_detector.py`
+  输出摘要：新增合成 `TamperRegion` 候选辅助方法，补充低阈值数量增长和 `max_items` 上限语义回归测试。
+- 10:19 工具：`apply_patch`
+  参数：修改 `README.md`、`项目梳理.md`
+  输出摘要：明确 `REPORT_CONFIDENCE_THRESHOLD` 是最终输出数量的单一报告级阈值，`0.0` 不应再按报告置信度剔除候选。
+- 10:20 工具：`/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_report_threshold_lowering_increases_reportable_box_count test_detector.UniversalTamperDetectorTest.test_low_report_threshold_is_limited_by_max_items_not_type_caps test_detector.UniversalTamperDetectorTest.test_single_report_threshold_can_reduce_output_boxes`
+  参数：执行本轮阈值回归测试
+  输出摘要：3 项运行，2 项新增回归失败；低阈值期望 5 个候选实际 2 个，`max_items=3` 期望 3 个实际 2 个。
+- 10:20 工具：`/opt/anaconda3/bin/python -m py_compile test_detector.py`
+  参数：验证测试文件语法
+  输出摘要：通过。
+
+## 编码后声明 - REPORT_CONFIDENCE_THRESHOLD 回归测试与文档
+
+时间：2026-04-21 10:20:00 CST
+
+### 1. 复用了以下既有组件
+
+- `detector.py::TamperRegion`：用于构造稳定的报告级候选。
+- `detector.py::UniversalTamperDetector._reportable_candidates`：用于覆盖最终报告筛选链路。
+- `detector.py::UniversalTamperDetector._report_confidence`：用于动态计算阈值分界。
+- `test_detector.py` 现有 `unittest` 测试组织：用于保持测试风格一致。
+
+### 2. 遵循了以下项目约定
+
+- 命名约定：新增测试方法使用 `test_...`，辅助方法使用 `_report_threshold_candidates`。
+- 代码风格：沿用标准库、第三方、本地模块导入顺序和 `self.assert...` 断言。
+- 文件组织：测试集中在 `test_detector.py`，用户文档在 `README.md`，项目说明在 `项目梳理.md`，本轮记录写入 `.codex/`。
+
+### 3. 对比了以下相似实现
+
+- `test_detector.py::test_detector_accepts_tunable_overrides`：本轮延续参数覆盖验证，并增加行为断言。
+- `test_detector.py::test_cli_accepts_tunable_overrides`：本轮保留 CLI 透传测试，并补充阈值语义文档。
+- `test_detector.py::test_single_report_threshold_can_reduce_output_boxes`：本轮新增低阈值增长和显式上限测试，补齐单向高阈值测试不足。
+
+### 4. 未重复造轮子的证明
+
+- 未新增测试框架或外部依赖，继续使用项目现有 `unittest`。
+- 未新增生产代码辅助函数，直接复用现有 `TamperRegion` 和报告筛选方法。
+- 未修改 `detector.py`，新增测试专门暴露当前生产链路中 `_report_limit` 的隐藏数量限制。
+
+## 过程记录 - 高阈值保真回归测试与文档
+
+时间：2026-04-21 11:21:06 CST
+
+- 工具约束记录：当前环境未提供 `sequential-thinking`、`shrimp-task-manager`、`desktop-commander`、`context7` 和 `github.search_code` 工具；本轮改用本地命令读取上下文、用内置计划工具模拟任务拆分，并在本记录中保留替代原因。
+- 需求理解：用户要求仅在 `test_detector.py`、`README.md`、`项目梳理.md` 和项目本地 `.codex/` 中补测试和文档；核心语义是高阈值过滤后保留下来的应是正确候选，而不是错误候选。
+- 上下文检索：已阅读 `test_detector.py`、`README.md`、`项目梳理.md`、`detector.py` 中报告阈值、候选筛选、标准答案评测相关实现。
+- 相似实现：已对比样例直测、数据集误报抑制、合成候选阈值测试和 `_reportable_candidates` 四类模式。
+- 探查结果：用阈值 `50、60、68、70、75、80、85、90` 跑 `截图.png`、`票据.png`、`300.png`、`400.png`，发现显式高阈值模式仍保留多个与标准答案 IoU 为 `0.0` 的高置信候选；截图在 `68` 以上还会丢失正确 `time_group`，票据在 `80` 以上会丢失正确 `digit_window`。
+
+### 编码前检查 - 高阈值保真回归测试与文档
+
+时间：2026-04-21 11:21:06 CST
+
+□ 已查阅上下文摘要文件：`.codex/context-summary-high-threshold-fidelity-regression.md`
+□ 将使用以下可复用组件：
+
+- `test_detector.py::sample_image_path`：统一定位样例图。
+- `evaluation.py::extract_ground_truth_boxes`：抽取标准答案框。
+- `evaluation.py::bbox_iou`：判断检测框是否命中标准答案。
+- `detector.py::UniversalTamperDetector`：显式覆盖 `REPORT_CONFIDENCE_THRESHOLD`。
+
+□ 将遵循命名约定：测试方法使用 `test_...`，候选类型沿用既有英文标识。
+□ 将遵循代码风格：继续使用 `unittest`、`self.subTest` 和 `self.assert...`。
+□ 确认不重复造轮子，证明：已检查现有样例直测、数据集评测、阈值单调性测试，确认缺少“显式高阈值 + 真实标准答案 + 候选质量”的组合回归。
+
+### 执行记录
+
+- 11:21 工具：`apply_patch`
+  参数：新增 `.codex/context-summary-high-threshold-fidelity-regression.md` 并追加本轮操作记录。
+  输出摘要：记录上下文、相似实现、复用组件、测试策略和当前工具缺失替代方案。
+- 11:22 工具：`apply_patch`
+  参数：修改 `test_detector.py`、`README.md`、`项目梳理.md`。
+  输出摘要：新增 `test_high_report_threshold_keeps_ground_truth_candidates`，并补充高阈值保真语义说明。
+- 11:23 工具：`/opt/anaconda3/bin/python -m py_compile test_detector.py`
+  参数：验证测试文件语法。
+  输出摘要：通过。
+- 11:23 工具：`/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_high_report_threshold_keeps_ground_truth_candidates`
+  参数：执行新增高阈值保真回归。
+  输出摘要：失败，4 个子样例均发现高阈值后仍保留与标准答案无重叠的错误候选；截图、票据、300、400 分别暴露通用噪声、错误数字、错误时间和额外噪声候选问题。
+
+## 编码后声明 - 高阈值保真回归测试与文档
+
+时间：2026-04-21 11:24:00 CST
+
+### 1. 复用了以下既有组件
+
+- `test_detector.py::sample_image_path`：定位 `data/` 样例与根目录兼容路径。
+- `evaluation.py::extract_ground_truth_boxes`：抽取当前标准答案框。
+- `evaluation.py::bbox_iou`：沿用数据集评测的命中口径。
+- `detector.py::UniversalTamperDetector`：通过 `detector_overrides` 进入显式报告阈值路径。
+
+### 2. 遵循了以下项目约定
+
+- 命名约定：新增测试方法为 `test_high_report_threshold_keeps_ground_truth_candidates`，候选类型继续使用 `time_group`、`digit_window`、`text_noise_anomaly`。
+- 代码风格：继续使用 `unittest`、`self.subTest` 和 `self.assert...`，没有新增测试依赖。
+- 文件组织：测试、README、项目梳理和 `.codex/` 记录均写入用户允许范围。
+
+### 3. 对比了以下相似实现
+
+- `test_single_report_threshold_can_reduce_output_boxes`：本轮从只验证数量减少扩展为验证高阈值后的候选质量。
+- `test_reportable_outputs_suppress_correct_text_false_positives`：本轮复用 IoU 误报口径，但切到显式 `REPORT_CONFIDENCE_THRESHOLD` 路径。
+- `test_report_threshold_lowering_increases_reportable_box_count`：本轮保留单阈值语义背景，并补充真实样例质量约束。
+
+### 4. 未重复造轮子的证明
+
+- 未新增评测脚本或第三方库，直接复用现有标准答案抽框和 IoU 函数。
+- 未修改 `detector.py`，因为本轮用户限定写入范围不包含生产筛选实现。
+- 新增测试专门覆盖此前缺口：高阈值不只是数量控制，还要保证留下的是正确候选。
+
+## 过程记录 - 高阈值保真回归续补
+
+时间：2026-04-21 11:34:24 CST
+
+- 工具约束记录：当前环境仍未提供 `sequential-thinking`、`shrimp-task-manager`、`desktop-commander`、`context7` 和 `github.search_code` 工具；本轮继续用本地命令读取上下文、用内置计划工具模拟任务拆分，并把替代原因留痕。
+- 需求理解：用户要求继续检查高阈值保真回归和文档，只能写入 `test_detector.py`、`README.md`、`项目梳理.md` 与 `.codex` 记录，不回退主代理改动。
+- 上下文检索：已读取 `test_detector.py`、`README.md`、`项目梳理.md`、`.codex/operations-log.md`、`.codex/verification-report.md`、`.codex/context-summary-high-threshold-fidelity-regression.md`，并核对 `evaluation.py` 的 `extract_ground_truth_boxes`、`bbox_iou` 与 `evaluate_dataset` 评测口径。
+- 相似实现：已对比 `test_reportable_outputs_suppress_correct_text_false_positives`、`test_same_size_answer_images_extract_ground_truth_boxes`、`test_resized_answer_images_align_to_original`、`test_dataset_evaluation_recall_threshold` 和 `_reportable_candidates`。
+- 探查结果：当前 `95.0` 高阈值用例类型断言已通过，但测试未验证检测框与标准答案的实际 IoU，仍可能漏掉“同类型但位置错误”的退化。
+
+### 编码前检查 - 高阈值保真回归续补
+
+时间：2026-04-21 11:34:24 CST
+
+□ 已查阅上下文摘要文件：`.codex/context-summary-high-threshold-fidelity-regression.md`
+□ 将使用以下可复用组件：
+
+- `test_detector.py::sample_image_path`：统一定位样例图。
+- `evaluation.py::extract_ground_truth_boxes`：抽取标准答案框。
+- `evaluation.py::bbox_iou`：复用既有 `IoU >= 0.3` 命中口径。
+- `detector.py::UniversalTamperDetector`：维持显式 `REPORT_CONFIDENCE_THRESHOLD=95.0` 路径。
+
+□ 将遵循命名约定：测试辅助方法使用 `_ground_truth_boxes`、`_assert_detections_match_ground_truth`。
+□ 将遵循代码风格：继续使用 `unittest` 断言和项目现有评测函数，不新增依赖。
+□ 确认不重复造轮子，证明：已检查现有标准答案抽框、IoU、数据集误报断言，确认可直接复用而无需新增评测实现。
+
+### 执行记录
+
+- 11:31 工具：`/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_high_report_threshold_keeps_ground_truth_candidates`
+  参数：运行当前高阈值回归基线。
+  输出摘要：通过，说明当前类型断言没有暴露失败。
+- 11:31 工具：`/opt/anaconda3/bin/python` 内联探查脚本
+  参数：打印截图、票据、`300.png`、`400.png` 在阈值 `95.0` 下的检测类型、框、最佳 IoU 和候选来源。
+  输出摘要：四个样例均命中标准答案；最佳 IoU 分别约为 `0.9246`、`0.8019`、`0.7323`、`0.4249/0.3458`。
+- 11:33 工具：`apply_patch`
+  参数：补强 `test_detector.py`、`README.md`、`项目梳理.md` 和 `.codex/context-summary-high-threshold-fidelity-regression.md`。
+  输出摘要：新增高阈值候选与标准答案双向 IoU 断言，并补充验收说明。

@@ -14,16 +14,18 @@ BASE_DOCUMENT_DEFAULTS = UniversalTamperDetector.document_tunable_defaults()
 # 直接手动调参区
 # 如果你更习惯直接改文件而不是传命令行参数，优先改这里。
 RUN_CONFIG = {
-    "image": str(BASE_DIR / "data/300.png"),
+    "image": str(BASE_DIR / "data/image.png"),
     "output": str(BASE_DIR / "detected_result.png"),
     "report": str(BASE_DIR / "detected_report.json"),
-    "max_detections": 5,
+    "max_detections": 50,
     "evidence_output_dir": None,
 }
 
 # 融合层参数。
 # 可直接修改数值，例如：
 # "GLOBAL_EVIDENCE_WEIGHT": 1.05
+# "REPORT_CONFIDENCE_THRESHOLD": 68.0
+# 日常看框数量变化时，优先只改 REPORT_CONFIDENCE_THRESHOLD。
 DETECTOR_PARAM_DEFAULTS = dict(BASE_DETECTOR_DEFAULTS)
 
 # 文档规则层参数。
@@ -33,7 +35,8 @@ DETECTOR_PARAM_DEFAULTS = dict(BASE_DETECTOR_DEFAULTS)
 DOCUMENT_PARAM_DEFAULTS = dict(BASE_DOCUMENT_DEFAULTS)
 
 DETECTOR_PARAM_DEFAULTS["GLOBAL_EVIDENCE_WEIGHT"] = 1.05
-DOCUMENT_PARAM_DEFAULTS["TEXT_NOISE_THRESHOLD"] = 5
+DETECTOR_PARAM_DEFAULTS["REPORT_CONFIDENCE_THRESHOLD"] = 0
+DOCUMENT_PARAM_DEFAULTS["TEXT_NOISE_THRESHOLD"] = 5.0
 DOCUMENT_PARAM_DEFAULTS["METHOD_WEIGHT_STROKE"] = 1.4
 
 
@@ -191,7 +194,12 @@ def main() -> None:
     if changed_document_overrides:
         print(f"文档规则层参数覆盖: {json.dumps(changed_document_overrides, ensure_ascii=False)}")
 
-    report = build_report(result, max_report_candidates=int(detector.MAX_REPORT_CANDIDATES))
+    report = build_report(
+        result,
+        max_report_candidates=int(detector.MAX_REPORT_CANDIDATES),
+        min_report_confidence=float(detector.REPORT_CONFIDENCE_THRESHOLD),
+        single_threshold_mode=detector.single_threshold_mode,
+    )
     Path(args.report).write_text(
         json.dumps(report, ensure_ascii=False, indent=2),
         encoding="utf-8",

@@ -46,6 +46,29 @@ python main.py \
 
 命令执行后，终端会打印本次实际生效的参数覆盖项，方便记录调参组合。
 
+如果你主要想控制“最终结果里保留多少个框”，现在可以优先只调一个融合层参数：`REPORT_CONFIDENCE_THRESHOLD`。它是最终输出的单一置信度闸门，会按统一的报告级置信度同时过滤结果图里的最终 `detections` 和 JSON 里的 `top_candidates`。
+- 调高：输出框更少或不增加，更保守
+- 调低：输出框更多或不减少，更激进
+- 设为 `0.0`：表示不再按报告级置信度剔除候选，最终数量只应继续受“同一物理区域去重”和 `--max-detections`/`MAX_REPORT_CANDIDATES` 这类显式数量上限影响
+
+高阈值模式不只是“框更少”，还会优先保留更可信的主候选：
+- 截图场景优先保留 `time_group`
+- 票据场景优先保留 `digit_window`
+- 身份证和发票优先保留 `*_precise`、`invoice_*`、`embedded_id_photo` 这类语义更强的候选
+- `300.png`、`400.png` 这类短信样例继续优先保留真实的 `text_noise_anomaly`
+
+高阈值的语义不是“只要置信度数值高就保留”，而是“在收紧输出数量时优先保留正确候选”。因此高阈值回归要求：截图样例仍保留命中标准答案的 `time_group`，票据样例仍保留命中标准答案的 `digit_window`，`data/300.png` 和 `data/400.png` 仍保留命中标准答案的 `text_noise_anomaly`；同时，被高阈值留下的可见框不应是与标准答案无重叠的错误候选。
+验收时会同时检查候选类型和标准答案 IoU：`test_high_report_threshold_keeps_ground_truth_candidates` 使用 `IoU >= 0.3` 的既有评测口径，要求每个高阈值输出框都命中标准答案，并要求每个标准答案框都被高阈值输出覆盖。因此“同类型但位置错误”的候选不能通过高阈值保真回归。
+
+例如：
+
+```bash
+python main.py \
+  --image ./data/400.png \
+  --report ./detected_report.json \
+  --detector-report-confidence-threshold 68
+```
+
 ## Python API
 
 ```python
@@ -74,6 +97,7 @@ for item in result.detections:
 - `--max-detections`：最多输出的检测框数量，默认 5
 - `--evidence-output-dir`：辅助证据热力图输出目录；传入后生成 ELA、噪声和融合热力图
 - `--detector-*`：覆盖融合层参数，例如 `--detector-global-evidence-weight`
+- `--detector-report-confidence-threshold`：覆盖 `REPORT_CONFIDENCE_THRESHOLD`，用于单点控制最终输出框数量
 - `--document-*`：覆盖文档规则层参数，例如 `--document-text-noise-threshold`
 
 ## 标准答案评测
@@ -110,7 +134,10 @@ python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-t
 
 每个检测框的 `detail.evidence` 中还会保留局部 ELA、局部噪声以及全局证据分，便于回看候选为什么被保留。
 
-当前默认输出采用“召回不降 + 报告过滤”的平衡策略：内部仍保留完整候选池用于调试，但最终 `detections` 和 `top_candidates` 只展示通过报告级过滤的高可信候选，尽量避免把正确文字直接画框或写进报告。
+当前默认输出采用“召回不降 + 报告过滤”的平衡策略：内部仍保留完整候选池用于调试，但最终 `detections` 和 `top_candidates` 只展示通过报告级过滤的候选，尽量避免把正确文字直接画框或写进报告。报告级过滤的数量语义统一由 `REPORT_CONFIDENCE_THRESHOLD` 控制：调高阈值只能让输出数量减少或保持不变，调低阈值只能让输出数量增加或保持不变；其他链路只负责候选合法性、同一区域去重和显式上限截断，不能再额外承担“隐藏阈值”的数量控制职责。
+当显式传入该阈值时，单阈值模式还会对候选质量做额外加权，高阈值下优先保留时间框、数字框、证件精确字段、发票主字段和真实短信噪声框，而不是把纯粹分值高但语义较弱的碎片热点排到前面。
+
+从验收口径看，`REPORT_CONFIDENCE_THRESHOLD` 同时承担数量和质量约束：数量上必须单调收紧，质量上必须避免高置信错误候选压过已知正确场景候选。也就是说，高阈值过滤后的 `detections` 和 `top_candidates` 应该更像“可信候选清单”，而不是“错误候选也能凭高分留下”的原始排序结果。
 
 当传入 `--max-detections 8` 进行评测时，`max_detections` 表示“最多输出数量上限”，而不是“补满到 8 个”。融合层会优先保留真正高可信的候选，例如对大文本块内部的噪声图热点，会输出更小的“噪声篡改”细化框来覆盖只修改少量文字的场景；低可信正常文字候选则不会进入最终报告。
 短信类场景目前采用“文字组件簇细化 + 报告级过滤”的组合策略：先在文本块内部找多个局部噪声峰值，再结合截图时间框、票据数字框等专用规则做场景抑制，尽量兼顾 `400.png` 这种多处数字改动召回和旧样例的误报控制。

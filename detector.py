@@ -34,6 +34,8 @@ class DetectionResult:
     candidate_regions: list[TamperRegion]
     evidence: dict[str, float]
     evidence_artifacts: dict[str, str]
+    threshold_score_mode: str
+    threshold_score_value: float
 
 
 @dataclass(slots=True)
@@ -52,6 +54,7 @@ class UniversalTamperDetector:
     LOCAL_ELA_WEIGHT = 1.6
     LOCAL_NOISE_WEIGHT = 12
     MAX_REPORT_CANDIDATES = 8
+    REPORT_CONFIDENCE_THRESHOLD = 0.0
 
     def __init__(
         self,
@@ -60,6 +63,10 @@ class UniversalTamperDetector:
         document_detector_overrides: dict[str, object] | None = None,
     ):
         self.max_output_detections = max_output_detections
+        self.single_threshold_mode = bool(
+            detector_overrides
+            and "REPORT_CONFIDENCE_THRESHOLD" in detector_overrides
+        )
         if detector_overrides:
             for key, value in detector_overrides.items():
                 setattr(self, key, value)
@@ -72,6 +79,7 @@ class UniversalTamperDetector:
             "LOCAL_ELA_WEIGHT": cls.LOCAL_ELA_WEIGHT,
             "LOCAL_NOISE_WEIGHT": cls.LOCAL_NOISE_WEIGHT,
             "MAX_REPORT_CANDIDATES": cls.MAX_REPORT_CANDIDATES,
+            "REPORT_CONFIDENCE_THRESHOLD": cls.REPORT_CONFIDENCE_THRESHOLD,
         }
 
     @classmethod
@@ -119,6 +127,13 @@ class UniversalTamperDetector:
             image_shape=gray.shape,
             max_detections=max_detections,
         )
+        threshold_score_mode = "single_threshold" if self.single_threshold_mode else "report_confidence"
+        for detection in enriched_detections:
+            detection.detail["threshold_score"] = round(
+                self._threshold_score_for_detection(detection, enriched_candidates),
+                4,
+            )
+            detection.detail["threshold_score_mode"] = threshold_score_mode
         status, reason = self._resolve_status(
             document_result=document_result,
             detections=enriched_detections,
@@ -140,6 +155,8 @@ class UniversalTamperDetector:
                 "document_score": round(evidence_bundle.document_score, 4),
             },
             evidence_artifacts=evidence_artifacts,
+            threshold_score_mode=threshold_score_mode,
+            threshold_score_value=round(float(self.REPORT_CONFIDENCE_THRESHOLD), 4),
         )
 
         if output_path:
@@ -147,7 +164,12 @@ class UniversalTamperDetector:
         if report_path:
             Path(report_path).write_text(
                 json.dumps(
-                    build_report(result, max_report_candidates=int(self.MAX_REPORT_CANDIDATES)),
+                    build_report(
+                        result,
+                        max_report_candidates=int(self.MAX_REPORT_CANDIDATES),
+                        min_report_confidence=float(self.REPORT_CONFIDENCE_THRESHOLD),
+                        single_threshold_mode=self.single_threshold_mode,
+                    ),
                     ensure_ascii=False,
                     indent=2,
                 ),
@@ -360,6 +382,31 @@ class UniversalTamperDetector:
                 break
 
         return sorted(refined_candidates, key=lambda item: item.score, reverse=True)
+
+    def _threshold_score_for_detection(
+        self,
+        detection: TamperRegion,
+        candidates: list[TamperRegion],
+    ) -> float:
+        best_time_candidate = self._best_candidate_of_type(candidates, "time_group")
+        best_digit_candidate = self._best_candidate_of_type(candidates, "digit_window")
+        has_strong_refinement = any(
+            self._is_strong_evidence_refinement(candidate)
+            for candidate in candidates
+            if not self._is_special_scene_conflicting_refinement(
+                candidate,
+                best_time_candidate,
+                best_digit_candidate,
+            )
+        )
+        if self.single_threshold_mode:
+            return self._single_threshold_score(
+                detection,
+                has_strong_refinement,
+                best_time_candidate,
+                best_digit_candidate,
+            )
+        return self._report_confidence(detection)
 
     def _find_noisy_component_clusters_in_text_box(
         self,
@@ -729,13 +776,20 @@ class UniversalTamperDetector:
         image_shape: tuple[int, int],
         max_detections: int,
     ) -> list[TamperRegion]:
-        return self._reportable_candidates(candidates, max_items=max_detections)
+        return self._reportable_candidates(
+            candidates,
+            max_items=max_detections,
+            min_confidence=float(self.REPORT_CONFIDENCE_THRESHOLD),
+            single_threshold_mode=self.single_threshold_mode,
+        )
 
     @classmethod
     def _reportable_candidates(
         cls,
         candidates: list[TamperRegion],
         max_items: int | None = None,
+        min_confidence: float = 0.0,
+        single_threshold_mode: bool = False,
     ) -> list[TamperRegion]:
         best_time_candidate = cls._best_candidate_of_type(candidates, "time_group")
         best_digit_candidate = cls._best_candidate_of_type(candidates, "digit_window")
@@ -748,29 +802,48 @@ class UniversalTamperDetector:
                 best_digit_candidate,
             )
         )
-        filtered = [
-            candidate
-            for candidate in candidates
-            if cls._is_reportable_candidate(candidate, has_strong_refinement)
-            and not cls._is_special_scene_conflicting_refinement(
-                candidate,
-                best_time_candidate,
-                best_digit_candidate,
-            )
-        ]
+        if single_threshold_mode:
+            filtered = [
+                candidate
+                for candidate in candidates
+                if cls._is_relaxed_report_candidate(candidate)
+            ]
+        else:
+            filtered = [
+                candidate
+                for candidate in candidates
+                if cls._is_reportable_candidate(candidate, has_strong_refinement)
+                and not cls._is_special_scene_conflicting_refinement(
+                    candidate,
+                    best_time_candidate,
+                    best_digit_candidate,
+                )
+            ]
         selected: list[TamperRegion] = []
         limited_counts: dict[str, int] = {}
         for candidate in sorted(
             filtered,
-            key=lambda item: cls._report_confidence(item),
+            key=lambda item: cls._single_threshold_score(
+                item,
+                has_strong_refinement,
+                best_time_candidate,
+                best_digit_candidate,
+            ) if single_threshold_mode else cls._report_confidence(item),
             reverse=True,
         ):
             if max_items is not None and len(selected) >= max_items:
                 break
-            limited_key, limited_max = cls._report_limit(candidate)
-            if limited_key:
-                if limited_counts.get(limited_key, 0) >= limited_max:
-                    continue
+            confidence = cls._single_threshold_score(
+                candidate,
+                has_strong_refinement,
+                best_time_candidate,
+                best_digit_candidate,
+            ) if single_threshold_mode else cls._report_confidence(candidate)
+            if confidence < min_confidence:
+                continue
+            limited_key, limited_max = ("", 0) if single_threshold_mode else cls._report_limit(candidate)
+            if limited_key and limited_counts.get(limited_key, 0) >= limited_max:
+                continue
             if cls._is_duplicate_against(candidate, selected):
                 continue
 
@@ -778,6 +851,94 @@ class UniversalTamperDetector:
             if limited_key:
                 limited_counts[limited_key] = limited_counts.get(limited_key, 0) + 1
         return selected
+
+    @classmethod
+    def _report_priority(
+        cls,
+        candidate: TamperRegion,
+        has_strong_refinement: bool,
+        best_time_candidate: TamperRegion | None,
+        best_digit_candidate: TamperRegion | None,
+    ) -> int:
+        # 旧报告规则只影响排序，不再硬性排除候选，最终数量由阈值和去重共同决定。
+        if not cls._is_reportable_candidate(candidate, has_strong_refinement):
+            return 0
+        if cls._is_special_scene_conflicting_refinement(
+            candidate,
+            best_time_candidate,
+            best_digit_candidate,
+        ):
+            return 0
+        return 1
+
+    @classmethod
+    def _single_threshold_score(
+        cls,
+        candidate: TamperRegion,
+        has_strong_refinement: bool,
+        best_time_candidate: TamperRegion | None,
+        best_digit_candidate: TamperRegion | None,
+    ) -> float:
+        score = cls._report_confidence(candidate)
+        zone = str(candidate.detail.get("zone", ""))
+        conflict = cls._is_special_scene_conflicting_refinement(
+            candidate,
+            best_time_candidate,
+            best_digit_candidate,
+        )
+        strict_ok = cls._is_reportable_candidate(candidate, has_strong_refinement) and not conflict
+        is_best_time = (
+            best_time_candidate is not None
+            and candidate.detection_type == "time_group"
+            and candidate.bbox == best_time_candidate.bbox
+        )
+        is_best_digit = (
+            best_digit_candidate is not None
+            and candidate.detection_type == "digit_window"
+            and candidate.bbox == best_digit_candidate.bbox
+        )
+
+        if candidate.detection_type == "time_group":
+            score += 35.0 if strict_ok and is_best_time else 0.0 if strict_ok else -35.0
+        elif candidate.detection_type == "digit_window":
+            score += 35.0 if strict_ok and is_best_digit else 0.0 if strict_ok else -20.0
+        elif candidate.detection_type == "text_region":
+            if zone.endswith("_precise") or zone in {"invoice_large_text_field", "invoice_header_stamp"}:
+                score += 45.0 if strict_ok else -15.0
+            else:
+                score -= 20.0
+        elif candidate.detection_type == "region_anomaly":
+            if zone == "embedded_id_photo":
+                score += 40.0 if strict_ok else -10.0
+            else:
+                score -= 25.0
+        elif zone == "evidence_text_noise_refinement":
+            if strict_ok:
+                score += 18.0
+            else:
+                score -= 10.0
+        elif zone == "text_noise_consistency":
+            score -= 15.0
+        elif strict_ok:
+            score += 5.0
+        else:
+            score -= 10.0
+
+        if conflict:
+            score -= 30.0
+        return score
+
+    @staticmethod
+    def _is_relaxed_report_candidate(candidate: TamperRegion) -> bool:
+        x, y, w, h = candidate.bbox
+        if w <= 0 or h <= 0:
+            return False
+        if not np.isfinite(candidate.score):
+            return False
+        area = w * h
+        if candidate.detection_type == "region_anomaly":
+            return area >= 300
+        return area >= 80
 
     @classmethod
     def _is_reportable_candidate(
@@ -843,27 +1004,39 @@ class UniversalTamperDetector:
         support_count = int(candidate.detail.get("support_count", len(candidate.char_indices or [])))
         local_noise = cls._detail_float(candidate, "local_noise")
         confidence = float(candidate.score)
+        area = max(candidate.bbox[2] * candidate.bbox[3], 0)
 
         if zone == "evidence_text_noise_refinement":
-            confidence += 70.0
+            # 单阈值模式下更希望优先保留时间框、数字框、证件精确文本等主框，
+            # 因此这里不再给文字噪声细化框过高的基础报告分，避免高阈值时被它反压。
+            confidence += 52.0
             confidence += 2.0 * cls._plain_detail_float(candidate, "evidence_contrast")
             confidence += 7.0 * cls._plain_detail_float(candidate, "evidence_window_score")
             confidence += min(support_count, 4) * 0.8
             confidence -= min((candidate.bbox[2] * candidate.bbox[3]) / 1800.0, 8.0)
         elif candidate.detection_type == "digit_window":
-            confidence += 60.0
+            confidence += 78.0
         elif candidate.detection_type == "time_group":
-            confidence += 55.0
+            confidence += 77.0
         elif candidate.detection_type == "region_anomaly":
-            confidence += 52.0 if zone == "embedded_id_photo" else 48.0
-            confidence += min(support_count, 8) * 0.2
+            if zone == "embedded_id_photo":
+                confidence += 74.0
+            else:
+                confidence += 32.0
+                confidence += min(support_count, 8) * 0.2
+                if area <= 4000:
+                    confidence -= 18.0
+                elif area <= 16000:
+                    confidence -= 12.0
+                elif area >= 80000:
+                    confidence -= 8.0
         elif candidate.detection_type == "text_region" and zone.endswith("_precise"):
-            confidence += 44.0
+            confidence += 70.0
             confidence += min(support_count, 8) * 0.35
         elif zone == "invoice_header_stamp":
-            confidence += 43.0 + min(support_count, 4) * 0.4
+            confidence += 57.0 + min(support_count, 4) * 0.4
         elif zone == "invoice_large_text_field":
-            confidence += 41.0 + min(support_count, 8) * 0.25
+            confidence += 53.0 + min(support_count, 8) * 0.25
         elif candidate.detection_type == "text_noise_anomaly":
             confidence += 32.0 + 4.0 * local_noise
 
@@ -1149,7 +1322,8 @@ def visualize_detection(image: np.ndarray, result: DetectionResult) -> np.ndarra
         cv2.rectangle(overlay, (max(0, x - 6), max(0, y - 6)), (x + w + 6, y + h + 6), color, -1)
         cv2.rectangle(output, (max(0, x - 6), max(0, y - 6)), (x + w + 6, y + h + 6), color, 2)
         cv2.rectangle(output, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        label = f"{region.label} {region.score:.2f}"
+        threshold_score = float(region.detail.get("threshold_score", region.score))
+        label = f"{region.label} T={threshold_score:.2f}"
         text_origin = (x, max(18, y - 10))
         cv2.putText(output, label, text_origin, cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv2.LINE_AA)
 
@@ -1171,12 +1345,16 @@ def _to_builtin(value):
 def build_report(
     result: DetectionResult,
     max_report_candidates: int | None = None,
+    min_report_confidence: float = 0.0,
+    single_threshold_mode: bool = False,
 ) -> dict[str, object]:
     if max_report_candidates is None:
         max_report_candidates = UniversalTamperDetector.MAX_REPORT_CANDIDATES
     reportable_candidates = UniversalTamperDetector._reportable_candidates(
         result.candidate_regions,
         max_items=max_report_candidates,
+        min_confidence=min_report_confidence,
+        single_threshold_mode=single_threshold_mode,
     )
     return {
         "status": result.status,
@@ -1189,6 +1367,7 @@ def build_report(
                 "bbox": list(detection.bbox),
                 "char_indices": detection.char_indices or [],
                 "score": round(detection.score, 4),
+                "report_confidence": round(UniversalTamperDetector._report_confidence(detection), 4),
                 "detail": _to_builtin(detection.detail),
             }
             for detection in result.detections
@@ -1202,11 +1381,14 @@ def build_report(
                 "line_index": candidate.line_index,
                 "bbox": list(candidate.bbox),
                 "score": round(candidate.score, 4),
+                "report_confidence": round(UniversalTamperDetector._report_confidence(candidate), 4),
             }
             for candidate in reportable_candidates
         ],
         "evidence": result.evidence,
         "evidence_artifacts": result.evidence_artifacts,
+        "threshold_score_mode": result.threshold_score_mode,
+        "threshold_score_value": result.threshold_score_value,
     }
 
 

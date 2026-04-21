@@ -89,3 +89,171 @@
 
 - `400.png` 已纳入硬回归，并可逐处输出两个真实篡改位置
 - `截图.png` 的 `time_group` 和 `票据.png` 的 `digit_window` 主框优先级已恢复
+
+---
+
+## 增量验证 - 单阈值最终输出控制
+
+生成时间：2026-04-21 10:31:15 CST
+
+### 需求审查清单
+
+- 目标：让用户主要只调 `REPORT_CONFIDENCE_THRESHOLD` 就能控制最终输出框数量
+- 范围：融合层最终候选筛选、`main.py` 默认调参区、测试和文档
+- 交付物：单阈值模式实现、回归测试、README 和项目梳理说明、操作日志
+- 审查要点：低阈值不再被类型限额压成一两个框，高阈值能收紧输出，默认评测不回退
+
+### 评分
+
+- 代码质量：93/100
+- 测试覆盖：95/100
+- 规范遵循：90/100
+- 需求匹配：96/100
+- 架构一致：92/100
+- 风险评估：90/100
+- 综合评分：93/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m unittest test_detector.py`
+   - 结果：通过，`Ran 19 tests in 139.099s`
+2. `/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+   - 结果：通过，`recall=0.9286`
+3. `data/400.png` 阈值阶梯：
+   - `0 -> 11` 个框
+   - `50 -> 9` 个框
+   - `60 -> 3` 个框
+   - `68 -> 3` 个框
+   - `80 -> 3` 个框
+   - `95 -> 2` 个框
+   - `999 -> 0` 个框
+
+### 结论
+
+- `REPORT_CONFIDENCE_THRESHOLD` 现在在显式调参路径中是最终输出数量的主控制项
+- 默认 API 未显式传入该参数时继续使用原报告过滤，避免评测误报回升
+
+---
+
+## 增量验证 - 高阈值保真修复
+
+生成时间：2026-04-21 11:39:32 CST
+
+### 需求审查清单
+
+- 目标：确保高阈值过滤后优先留下正确主候选，而不是错误的高分候选
+- 范围：单阈值模式下的最终排序与阈值分数、回归测试、文档说明
+- 交付物：`detector.py` 排序修复、高阈值专项测试、文档和日志
+- 审查要点：`截图 -> time_group`、`票据 -> digit_window`、`300/400 -> text_noise_anomaly`，默认评测不回退
+
+### 评分
+
+- 代码质量：94/100
+- 测试覆盖：96/100
+- 规范遵循：90/100
+- 需求匹配：97/100
+- 架构一致：93/100
+- 风险评估：91/100
+- 综合评分：94/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_high_report_threshold_keeps_ground_truth_candidates`
+   - 结果：通过
+2. `/opt/anaconda3/bin/python -m unittest test_detector.py`
+   - 结果：通过，`Ran 20 tests in 181.595s`
+3. `/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+   - 结果：通过，`recall=0.9286`
+4. 高阈值样例输出：
+   - `截图.png @95 -> ['time_group']`
+   - `票据.png @95 -> ['digit_window']`
+   - `300.png @95 -> ['text_noise_anomaly']`
+   - `400.png @95 -> ['text_noise_anomaly', 'text_noise_anomaly']`
+
+### 结论
+
+- 高阈值过滤现在优先留下正确主候选，而不再让碎片热点、冲突噪声框或错误时间框抢位
+- 单阈值模式和默认严格模式已同时通过回归
+
+---
+
+## 增量验证 - REPORT_CONFIDENCE_THRESHOLD 回归测试与文档
+
+生成时间：2026-04-21 10:20:00 CST
+
+### 需求审查清单
+
+- 目标：围绕“单阈值控制最终框数量”补回归测试，并更新 README/项目梳理中的新语义。
+- 范围：仅修改 `test_detector.py`、`README.md`、`项目梳理.md` 和 `.codex/` 本轮记录文件。
+- 交付物：新增合成候选回归测试、文档语义说明、上下文摘要、操作日志和本验证报告。
+- 审查要点：阈值调高减少输出；阈值调低增加或不减少输出；低阈值不被隐藏类型限额压成固定一两个框。
+- 依赖与风险：`detector.py` 不在本轮允许修改范围内，新增测试当前暴露生产链路未满足新语义。
+
+### 评分
+
+- 代码质量：88/100
+- 测试覆盖：92/100
+- 规范遵循：86/100
+- 需求匹配：90/100
+- 架构一致：84/100
+- 风险评估：70/100
+- 综合评分：78/100
+- 建议：退回生产实现修复
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_report_threshold_lowering_increases_reportable_box_count test_detector.UniversalTamperDetectorTest.test_low_report_threshold_is_limited_by_max_items_not_type_caps test_detector.UniversalTamperDetectorTest.test_single_report_threshold_can_reduce_output_boxes`
+   - 结果：失败，`Ran 3 tests in 9.360s`，2 项新增回归失败。
+   - `test_report_threshold_lowering_increases_reportable_box_count`：低阈值期望 5 个候选，实际 2 个。
+   - `test_low_report_threshold_is_limited_by_max_items_not_type_caps`：`max_items=3` 期望 3 个候选，实际 2 个。
+2. `/opt/anaconda3/bin/python -m py_compile test_detector.py`
+   - 结果：通过。
+
+### 结论
+
+- 测试和文档已补齐用户要求的新语义。
+- 当前生产行为仍不满足该语义，需后续在 `detector.py` 修复 `_report_limit` 等隐藏数量限制后再让新增回归通过。
+
+---
+
+## 增量验证 - 高阈值保真回归测试与文档
+
+生成时间：2026-04-21 11:24:00 CST
+
+### 需求审查清单
+
+- 目标：补充高阈值质量回归，确保高阈值过滤后保留下来的是正确候选，而不是错误候选。
+- 范围：仅修改 `test_detector.py`、`README.md`、`项目梳理.md` 和 `.codex/` 本轮记录文件。
+- 交付物：新增真实样例高阈值保真测试、README 高阈值语义说明、项目梳理高阈值验收口径、上下文摘要、操作日志和验证报告。
+- 审查要点：截图保留命中标准答案的 `time_group`；票据保留命中标准答案的 `digit_window`；`300.png` 和 `400.png` 保留命中标准答案的 `text_noise_anomaly`；高阈值留下的可见框不应与标准答案完全无重叠。
+- 依赖与风险：`detector.py` 不在本轮允许修改范围内，新增测试会暴露当前生产筛选逻辑仍未满足高阈值保真语义。
+
+### 评分
+
+- 代码质量：90/100
+- 测试覆盖：94/100
+- 规范遵循：88/100
+- 需求匹配：96/100
+- 架构一致：86/100
+- 风险评估：72/100
+- 综合评分：79/100
+- 建议：退回生产实现修复
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m py_compile test_detector.py`
+   - 结果：通过。
+2. `/opt/anaconda3/bin/python -m unittest test_detector.UniversalTamperDetectorTest.test_high_report_threshold_keeps_ground_truth_candidates`
+   - 结果：失败，`Ran 1 test in 10.445s`，4 个子样例失败。
+   - `截图.png`：保留了与标准答案无重叠的 `text_noise_anomaly` 和 `region_anomaly` 错误候选。
+   - `票据.png`：除正确 `digit_window` 外，还保留了多个与标准答案无重叠的 `digit_window` 错误候选。
+   - `300.png`：保留了与标准答案无重叠的 `time_group` 错误候选。
+   - `400.png`：除命中标准答案的 `text_noise_anomaly` 外，还保留了一个与标准答案无重叠的 `text_noise_anomaly` 错误候选。
+
+### 结论
+
+- 本轮测试和文档已覆盖用户指定的高阈值保真语义。
+- 当前生产行为未通过新增回归，说明显式高阈值路径仍偏向原始报告置信度排序，未充分抑制高置信错误候选。
+- 后续需要在允许修改 `detector.py` 时调整高阈值路径的质量约束，例如把专用场景候选保护、标准候选合法性和错误候选抑制纳入 `single_threshold_mode`，同时保持数量单调性。
