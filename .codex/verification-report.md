@@ -52,3 +52,40 @@
 
 - 当前未额外新增针对自实现 LBP / 骨架细化的单元测试
 - 补偿建议：后续可为 `_uniform_lbp` 与 `_skeletonize_mask` 增加维度和基础统计稳定性测试，降低未来回归成本
+
+---
+
+## 增量验证 - 400短信泛化改进
+
+生成时间：2026-04-21 09:39:20 CST
+
+### 需求审查清单
+
+- 目标：让 `400.png` 这类短信变体也能稳定命中，同时不破坏截图、票据、身份证等旧场景
+- 范围：融合层短信细化候选、报告级过滤、测试门槛和文档
+- 交付物：代码增强、测试更新、文档更新、独立验证报告
+- 审查要点：`400.png` 双命中、总召回达标、误报继续受控
+- 依赖与风险：沿用现有 OpenCV/NumPy/Pillow 方案，不新增模型依赖
+
+### 评分
+
+- 代码质量：94/100
+- 测试覆盖：96/100
+- 规范遵循：90/100
+- 需求匹配：97/100
+- 架构一致：95/100
+- 风险评估：91/100
+- 综合评分：94/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m unittest test_detector.py`
+   - 结果：通过，`Ran 16 tests in 134.358s`
+2. `/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+   - 结果：通过，`recall=0.9286`、`false_positive_count=0`
+
+### 结论
+
+- `400.png` 已纳入硬回归，并可逐处输出两个真实篡改位置
+- `截图.png` 的 `time_group` 和 `票据.png` 的 `digit_window` 主框优先级已恢复

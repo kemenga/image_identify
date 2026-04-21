@@ -142,6 +142,59 @@ class TraditionalTamperDetector:
     MIN_CONTEXT_LINE_CHARS = 4
     SPECIAL_RULE_TYPES = {"digit_window", "time_group", "short_text"}
 
+    def __init__(self, overrides: dict[str, object] | None = None):
+        self.METHOD_WEIGHTS = dict(self.__class__.METHOD_WEIGHTS)
+        self.SPECIAL_RULE_TYPES = set(self.__class__.SPECIAL_RULE_TYPES)
+        if not overrides:
+            return
+
+        for key, value in overrides.items():
+            if key.startswith("METHOD_WEIGHT_"):
+                method_name = key.removeprefix("METHOD_WEIGHT_").lower()
+                self.METHOD_WEIGHTS[method_name] = float(value)
+                continue
+            if key == "SPECIAL_RULE_TYPES":
+                self.SPECIAL_RULE_TYPES = {
+                    item.strip()
+                    for item in str(value).split(",")
+                    if item.strip()
+                }
+                continue
+            setattr(self, key, value)
+
+    @classmethod
+    def tunable_defaults(cls) -> dict[str, object]:
+        return {
+            "METHOD_WEIGHT_TEXTURE": float(cls.METHOD_WEIGHTS["texture"]),
+            "METHOD_WEIGHT_EDGE": float(cls.METHOD_WEIGHTS["edge"]),
+            "METHOD_WEIGHT_JPEG": float(cls.METHOD_WEIGHTS["jpeg"]),
+            "METHOD_WEIGHT_STROKE": float(cls.METHOD_WEIGHTS["stroke"]),
+            "METHOD_WEIGHT_CLAHE": float(cls.METHOD_WEIGHTS["clahe"]),
+            "PRIMARY_METHOD": cls.PRIMARY_METHOD,
+            "DIGIT_MIN_WIDTH": cls.DIGIT_MIN_WIDTH,
+            "DIGIT_MAX_WIDTH": cls.DIGIT_MAX_WIDTH,
+            "MAX_DIGIT_GAP": cls.MAX_DIGIT_GAP,
+            "PREFIX_BONUS": cls.PREFIX_BONUS,
+            "DECIMAL_SUFFIX_BONUS": cls.DECIMAL_SUFFIX_BONUS,
+            "RUN_OFFSET_PENALTY": cls.RUN_OFFSET_PENALTY,
+            "LONG_RUN_PENALTY": cls.LONG_RUN_PENALTY,
+            "NO_CONTEXT_PENALTY": cls.NO_CONTEXT_PENALTY,
+            "DIGIT_WINDOW_THRESHOLD": cls.DIGIT_WINDOW_THRESHOLD,
+            "TIME_GROUP_THRESHOLD": cls.TIME_GROUP_THRESHOLD,
+            "SHORT_TEXT_THRESHOLD": cls.SHORT_TEXT_THRESHOLD,
+            "TEXT_NOISE_THRESHOLD": cls.TEXT_NOISE_THRESHOLD,
+            "TIME_RUN_MIN_LENGTH": cls.TIME_RUN_MIN_LENGTH,
+            "TIME_RUN_MAX_LENGTH": cls.TIME_RUN_MAX_LENGTH,
+            "TIME_RUN_MAX_GAP": cls.TIME_RUN_MAX_GAP,
+            "SHORT_SEPARATOR_HEIGHT_RATIO": cls.SHORT_SEPARATOR_HEIGHT_RATIO,
+            "SHORT_TEXT_MIN_WIDTH_RATIO": cls.SHORT_TEXT_MIN_WIDTH_RATIO,
+            "SHORT_TEXT_MIN_SPARE_WIDTH": cls.SHORT_TEXT_MIN_SPARE_WIDTH,
+            "MAX_OUTPUT_DETECTIONS": cls.MAX_OUTPUT_DETECTIONS,
+            "MIN_CONTEXT_TOTAL_CHARS": cls.MIN_CONTEXT_TOTAL_CHARS,
+            "MIN_CONTEXT_LINE_CHARS": cls.MIN_CONTEXT_LINE_CHARS,
+            "SPECIAL_RULE_TYPES": ",".join(sorted(cls.SPECIAL_RULE_TYPES)),
+        }
+
     def detect(
         self,
         gray: np.ndarray,

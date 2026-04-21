@@ -8,6 +8,7 @@
 如果你想先快速了解仓库在做什么、各文件职责怎么分，可以直接看 [项目梳理.md](./项目梳理.md)。
 
 当前版本还会比较同一张图片中不同文字组件的噪声一致性。当少量文字的高频噪声、拉普拉斯响应或背景残差明显偏离其余文字时，会生成“噪声篡改”候选，用于补强局部文字改动场景。
+对于 `data/300.png`、`data/400.png` 这类短信样例，当前实现已经支持在同一张图里把多个真实小改动逐处输出，而不是退化成整行大框。
 
 ## 适用范围
 
@@ -23,7 +24,27 @@
 pip install -r requirements.txt
 python main.py --image ./data/截图.png --output ./detected_result.png --report ./detected_report.json
 python main.py --image ./data/截图.png --output ./detected_result.png --report ./detected_report.json --evidence-output-dir ./evidence_maps
+python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8
 ```
+
+如果你要直接调融合权重、文字噪声阈值、数字窗口阈值等内部参数，可以先看完整 CLI：
+
+```bash
+python main.py --help
+```
+
+`main.py` 现在已经接入融合层和文档规则层的全部可调参数，例如：
+
+```bash
+python main.py \
+  --image ./data/400.png \
+  --report ./detected_report.json \
+  --detector-global-evidence-weight 1.05 \
+  --document-text-noise-threshold 5.1 \
+  --document-method-weight-stroke 1.4
+```
+
+命令执行后，终端会打印本次实际生效的参数覆盖项，方便记录调参组合。
 
 ## Python API
 
@@ -52,6 +73,20 @@ for item in result.detections:
 - `--report`：输出 JSON 报告路径
 - `--max-detections`：最多输出的检测框数量，默认 5
 - `--evidence-output-dir`：辅助证据热力图输出目录；传入后生成 ELA、噪声和融合热力图
+- `--detector-*`：覆盖融合层参数，例如 `--detector-global-evidence-weight`
+- `--document-*`：覆盖文档规则层参数，例如 `--document-text-noise-threshold`
+
+## 标准答案评测
+
+`evaluation.py` 会把 `data/xxx.png` 与 `data/xxx检测结果.png` 自动配对，文件名中已有 `检测结果` 的图片不会作为原图参与评测。当前默认采用召回优先口径，`IoU >= 0.3` 即视为标准答案框被命中，每张图最多统计 8 个检测框。
+
+```bash
+python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8
+```
+
+标准答案图中优先抽取红色标注框；当标准答案图和原图尺寸不一致时，会先用 ORB 特征匹配和仿射变换自动对齐，再结合与红框重叠的黄色或橙色外层标注稳定框范围。对齐不足 50 个匹配点、RANSAC 内点比例低于 `0.55` 或缩放比例不在 `0.5-2.0` 时会直接报错，避免静默跳过问题样例。
+
+评测报告包含每张图的标准框、检测框、命中情况、召回率、误报数和平均最佳 IoU。当前 `data/` 中只要存在对应 `xxx检测结果.png`，就会自动进入量化统计，因此 `400.png` 这类新增短信变体也会自动进入硬回归。
 
 ## 输出说明
 
@@ -62,6 +97,7 @@ for item in result.detections:
   - `reason`
   - `detections`
   - `candidate_count`
+  - `reportable_candidate_count`
   - `top_candidates`
   - `evidence`
   - `evidence_artifacts`
@@ -73,6 +109,13 @@ for item in result.detections:
 - `document_score`
 
 每个检测框的 `detail.evidence` 中还会保留局部 ELA、局部噪声以及全局证据分，便于回看候选为什么被保留。
+
+当前默认输出采用“召回不降 + 报告过滤”的平衡策略：内部仍保留完整候选池用于调试，但最终 `detections` 和 `top_candidates` 只展示通过报告级过滤的高可信候选，尽量避免把正确文字直接画框或写进报告。
+
+当传入 `--max-detections 8` 进行评测时，`max_detections` 表示“最多输出数量上限”，而不是“补满到 8 个”。融合层会优先保留真正高可信的候选，例如对大文本块内部的噪声图热点，会输出更小的“噪声篡改”细化框来覆盖只修改少量文字的场景；低可信正常文字候选则不会进入最终报告。
+短信类场景目前采用“文字组件簇细化 + 报告级过滤”的组合策略：先在文本块内部找多个局部噪声峰值，再结合截图时间框、票据数字框等专用规则做场景抑制，尽量兼顾 `400.png` 这种多处数字改动召回和旧样例的误报控制。
+
+如果需要做深入调试，Python API 返回值中的 `candidate_regions` 仍会保留完整候选池；报告中的 `top_candidates` 则只展示经过过滤后的可报告候选。
 
 `evidence_artifacts` 会记录辅助证据图路径。默认不生成辅助图时该字段为空字典；传入输出目录后会包含：
 
