@@ -1,0 +1,22 @@
+{
+  "id": "doc_0003_t02_cross_doc_splice",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0003_orig.png",
+  "tampered_image": "tampered/doc_0003_t02_cross_doc_splice.png",
+  "label_png": "labels_png/doc_0003_t02_cross_doc_splice检测结果.png",
+  "license": "CC BY-SA 3.0",
+  "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:ReceiptSwiss.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/ReceiptSwiss.jpg",
+  "tamper_method": "cross_doc_splice",
+  "boxes": [
+    {
+      "x": 424,
+      "y": 1414,
+      "w": 144,
+      "h": 65,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "跨文档裁切文本块拼接"
+}

@@ -1,0 +1,220 @@
+{
+  "generated_at": "2026-04-21 16:45:24 CST",
+  "dataset_root": "seed_dataset",
+  "seed": 42,
+  "record_count": 9,
+  "method_counts": {
+    "text_patch_replace": 3,
+    "cross_doc_splice": 3,
+    "copy_move_token": 3
+  },
+  "records": [
+    {
+      "id": "doc_0001_t01_text_patch_replace",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0001_orig.png",
+      "tampered_image": "tampered/doc_0001_t01_text_patch_replace.png",
+      "label_png": "labels_png/doc_0001_t01_text_patch_replace检测结果.png",
+      "label_json": "labels_json/doc_0001_t01_text_patch_replace.json",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+      "tamper_method": "text_patch_replace",
+      "boxes": [
+        {
+          "x": 563,
+          "y": 3138,
+          "w": 429,
+          "h": 553,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "局部遮盖并写入新的短文本"
+    },
+    {
+      "id": "doc_0001_t02_cross_doc_splice",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0001_orig.png",
+      "tampered_image": "tampered/doc_0001_t02_cross_doc_splice.png",
+      "label_png": "labels_png/doc_0001_t02_cross_doc_splice检测结果.png",
+      "label_json": "labels_json/doc_0001_t02_cross_doc_splice.json",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+      "tamper_method": "cross_doc_splice",
+      "boxes": [
+        {
+          "x": 1229,
+          "y": 3138,
+          "w": 205,
+          "h": 553,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "跨文档裁切文本块拼接"
+    },
+    {
+      "id": "doc_0001_t03_copy_move_token",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0001_orig.png",
+      "tampered_image": "tampered/doc_0001_t03_copy_move_token.png",
+      "label_png": "labels_png/doc_0001_t03_copy_move_token检测结果.png",
+      "label_json": "labels_json/doc_0001_t03_copy_move_token.json",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+      "tamper_method": "copy_move_token",
+      "boxes": [
+        {
+          "x": 564,
+          "y": 3138,
+          "w": 427,
+          "h": 553,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "复制同图文本块并移动覆盖"
+    },
+    {
+      "id": "doc_0002_t01_text_patch_replace",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0002_orig.png",
+      "tampered_image": "tampered/doc_0002_t01_text_patch_replace.png",
+      "label_png": "labels_png/doc_0002_t01_text_patch_replace检测结果.png",
+      "label_json": "labels_json/doc_0002_t01_text_patch_replace.json",
+      "license": "Public domain",
+      "license_url": "",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+      "tamper_method": "text_patch_replace",
+      "boxes": [
+        {
+          "x": 3665,
+          "y": 497,
+          "w": 91,
+          "h": 71,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "局部遮盖并写入新的短文本"
+    },
+    {
+      "id": "doc_0002_t02_cross_doc_splice",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0002_orig.png",
+      "tampered_image": "tampered/doc_0002_t02_cross_doc_splice.png",
+      "label_png": "labels_png/doc_0002_t02_cross_doc_splice检测结果.png",
+      "label_json": "labels_json/doc_0002_t02_cross_doc_splice.json",
+      "license": "Public domain",
+      "license_url": "",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+      "tamper_method": "cross_doc_splice",
+      "boxes": [
+        {
+          "x": 4096,
+          "y": 555,
+          "w": 93,
+          "h": 104,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "跨文档裁切文本块拼接"
+    },
+    {
+      "id": "doc_0002_t03_copy_move_token",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0002_orig.png",
+      "tampered_image": "tampered/doc_0002_t03_copy_move_token.png",
+      "label_png": "labels_png/doc_0002_t03_copy_move_token检测结果.png",
+      "label_json": "labels_json/doc_0002_t03_copy_move_token.json",
+      "license": "Public domain",
+      "license_url": "",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+      "tamper_method": "copy_move_token",
+      "boxes": [
+        {
+          "x": 3694,
+          "y": 2690,
+          "w": 766,
+          "h": 93,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "复制同图文本块并移动覆盖"
+    },
+    {
+      "id": "doc_0003_t01_text_patch_replace",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0003_orig.png",
+      "tampered_image": "tampered/doc_0003_t01_text_patch_replace.png",
+      "label_png": "labels_png/doc_0003_t01_text_patch_replace检测结果.png",
+      "label_json": "labels_json/doc_0003_t01_text_patch_replace.json",
+      "license": "CC BY-SA 3.0",
+      "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:ReceiptSwiss.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/ReceiptSwiss.jpg",
+      "tamper_method": "text_patch_replace",
+      "boxes": [
+        {
+          "x": 424,
+          "y": 1414,
+          "w": 144,
+          "h": 65,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "局部遮盖并写入新的短文本"
+    },
+    {
+      "id": "doc_0003_t02_cross_doc_splice",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0003_orig.png",
+      "tampered_image": "tampered/doc_0003_t02_cross_doc_splice.png",
+      "label_png": "labels_png/doc_0003_t02_cross_doc_splice检测结果.png",
+      "label_json": "labels_json/doc_0003_t02_cross_doc_splice.json",
+      "license": "CC BY-SA 3.0",
+      "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:ReceiptSwiss.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/ReceiptSwiss.jpg",
+      "tamper_method": "cross_doc_splice",
+      "boxes": [
+        {
+          "x": 424,
+          "y": 1414,
+          "w": 144,
+          "h": 65,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "跨文档裁切文本块拼接"
+    },
+    {
+      "id": "doc_0003_t03_copy_move_token",
+      "source_type": "docs",
+      "original_image": "originals/docs/doc_0003_orig.png",
+      "tampered_image": "tampered/doc_0003_t03_copy_move_token.png",
+      "label_png": "labels_png/doc_0003_t03_copy_move_token检测结果.png",
+      "label_json": "labels_json/doc_0003_t03_copy_move_token.json",
+      "license": "CC BY-SA 3.0",
+      "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:ReceiptSwiss.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/ReceiptSwiss.jpg",
+      "tamper_method": "copy_move_token",
+      "boxes": [
+        {
+          "x": 963,
+          "y": 434,
+          "w": 415,
+          "h": 87,
+          "role": "tampered_region"
+        }
+      ],
+      "notes": "复制同图文本块并移动覆盖"
+    }
+  ]
+}

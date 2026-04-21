@@ -7,27 +7,27 @@
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        209,
-        707,
-        282,
-        66
+        1178,
+        1868,
+        2451,
+        109
       ],
       "char_indices": [],
-      "score": 8.5176,
-      "report_confidence": 63.0176,
+      "score": 8.9088,
+      "report_confidence": 63.9088,
       "detail": {
-        "raw_document_score": 8.4676,
-        "fused_score": 8.5176,
-        "support_count": 6,
+        "raw_document_score": 8.4088,
+        "fused_score": 8.9088,
+        "support_count": 41,
         "zone": "invoice_large_text_field",
         "evidence": {
-          "local_ela": 0.0075,
-          "local_noise": 0.4127,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.044,
+          "local_noise": 0.0872,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 108.0176,
+        "threshold_score": 108.9088,
         "threshold_score_mode": "single_threshold"
       }
     },
@@ -36,27 +36,27 @@
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        1341,
-        795,
-        282,
-        66
+        2794,
+        1517,
+        1096,
+        79
       ],
       "char_indices": [],
-      "score": 8.5175,
-      "report_confidence": 63.0175,
+      "score": 8.8115,
+      "report_confidence": 63.8115,
       "detail": {
-        "raw_document_score": 8.4675,
-        "fused_score": 8.5175,
-        "support_count": 6,
+        "raw_document_score": 8.7115,
+        "fused_score": 8.8115,
+        "support_count": 22,
         "zone": "invoice_large_text_field",
         "evidence": {
-          "local_ela": 0.0073,
-          "local_noise": 0.4127,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.0389,
+          "local_noise": 0.0928,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 108.0175,
+        "threshold_score": 108.8115,
         "threshold_score_mode": "single_threshold"
       }
     },
@@ -65,27 +65,520 @@
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        735,
-        426,
-        198,
-        53
+        386,
+        2008,
+        1001,
+        76
       ],
       "char_indices": [],
-      "score": 8.664,
-      "report_confidence": 62.914,
+      "score": 8.7054,
+      "report_confidence": 63.7054,
       "detail": {
-        "raw_document_score": 8.664,
-        "fused_score": 8.664,
+        "raw_document_score": 7.9697,
+        "fused_score": 8.7054,
+        "support_count": 20,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0497,
+          "local_noise": 0.0965,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.7054,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1236,
+        1755,
+        2052,
+        98
+      ],
+      "char_indices": [],
+      "score": 8.6157,
+      "report_confidence": 63.6157,
+      "detail": {
+        "raw_document_score": 7.9447,
+        "fused_score": 8.6157,
+        "support_count": 39,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.041,
+          "local_noise": 0.073,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.6157,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3399,
+        2006,
+        453,
+        72
+      ],
+      "char_indices": [],
+      "score": 8.6114,
+      "report_confidence": 63.6114,
+      "detail": {
+        "raw_document_score": 7.8421,
+        "fused_score": 8.6114,
+        "support_count": 9,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0556,
+          "local_noise": 0.1184,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.6114,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2065,
+        2110,
+        719,
+        103
+      ],
+      "char_indices": [],
+      "score": 8.5232,
+      "report_confidence": 63.5232,
+      "detail": {
+        "raw_document_score": 7.799,
+        "fused_score": 8.5232,
+        "support_count": 13,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0433,
+          "local_noise": 0.0766,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.5232,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        932,
+        2656,
+        943,
+        105
+      ],
+      "char_indices": [],
+      "score": 8.4783,
+      "report_confidence": 63.4783,
+      "detail": {
+        "raw_document_score": 8.1483,
+        "fused_score": 8.4783,
+        "support_count": 14,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0541,
+          "local_noise": 0.126,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.4783,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2821,
+        1637,
+        610,
+        81
+      ],
+      "char_indices": [],
+      "score": 8.4755,
+      "report_confidence": 63.4755,
+      "detail": {
+        "raw_document_score": 8.4032,
+        "fused_score": 8.4755,
+        "support_count": 12,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0369,
+          "local_noise": 0.0846,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.4755,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1745,
+        1541,
+        566,
+        74
+      ],
+      "char_indices": [],
+      "score": 8.4607,
+      "report_confidence": 63.4607,
+      "detail": {
+        "raw_document_score": 8.4107,
+        "fused_score": 8.4607,
+        "support_count": 10,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0531,
+          "local_noise": 0.0848,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.4607,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        386,
+        1887,
+        595,
+        96
+      ],
+      "char_indices": [],
+      "score": 8.4454,
+      "report_confidence": 63.4454,
+      "detail": {
+        "raw_document_score": 8.3954,
+        "fused_score": 8.4454,
+        "support_count": 11,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0375,
+          "local_noise": 0.0756,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.4454,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2036,
+        2363,
+        696,
+        68
+      ],
+      "char_indices": [],
+      "score": 8.393,
+      "report_confidence": 63.393,
+      "detail": {
+        "raw_document_score": 8.015,
+        "fused_score": 8.393,
+        "support_count": 11,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0732,
+          "local_noise": 0.1351,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.393,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3402,
+        1751,
+        443,
+        78
+      ],
+      "char_indices": [],
+      "score": 8.3231,
+      "report_confidence": 63.3231,
+      "detail": {
+        "raw_document_score": 8.2731,
+        "fused_score": 8.3231,
+        "support_count": 9,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0461,
+          "local_noise": 0.1021,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.3231,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2148,
+        2513,
+        349,
+        82
+      ],
+      "char_indices": [],
+      "score": 8.5712,
+      "report_confidence": 63.3212,
+      "detail": {
+        "raw_document_score": 8.5712,
+        "fused_score": 8.5712,
+        "support_count": 7,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0443,
+          "local_noise": 0.1009,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 108.3212,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3561,
+        1634,
+        318,
+        73
+      ],
+      "char_indices": [],
+      "score": 8.4207,
+      "report_confidence": 62.9207,
+      "detail": {
+        "raw_document_score": 8.4207,
+        "fused_score": 8.4207,
+        "support_count": 6,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0435,
+          "local_noise": 0.1007,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.9207,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        858,
+        1668,
+        309,
+        64
+      ],
+      "char_indices": [],
+      "score": 8.4121,
+      "report_confidence": 62.9121,
+      "detail": {
+        "raw_document_score": 8.4121,
+        "fused_score": 8.4121,
+        "support_count": 6,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0465,
+          "local_noise": 0.0896,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.9121,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        380,
+        1771,
+        257,
+        75
+      ],
+      "char_indices": [],
+      "score": 8.4112,
+      "report_confidence": 62.9112,
+      "detail": {
+        "raw_document_score": 8.4112,
+        "fused_score": 8.4112,
+        "support_count": 6,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0435,
+          "local_noise": 0.0901,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.9112,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        380,
+        2122,
+        467,
+        98
+      ],
+      "char_indices": [],
+      "score": 8.16,
+      "report_confidence": 62.91,
+      "detail": {
+        "raw_document_score": 8.11,
+        "fused_score": 8.16,
+        "support_count": 7,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0417,
+          "local_noise": 0.0897,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.91,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        385,
+        1539,
+        300,
+        72
+      ],
+      "char_indices": [],
+      "score": 8.4059,
+      "report_confidence": 62.9059,
+      "detail": {
+        "raw_document_score": 8.4059,
+        "fused_score": 8.4059,
+        "support_count": 6,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0449,
+          "local_noise": 0.0835,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.9059,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1311,
+        2126,
+        293,
+        73
+      ],
+      "char_indices": [],
+      "score": 8.159,
+      "report_confidence": 62.659,
+      "detail": {
+        "raw_document_score": 8.109,
+        "fused_score": 8.159,
+        "support_count": 6,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.041,
+          "local_noise": 0.0889,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.659,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        382,
+        1652,
+        276,
+        76
+      ],
+      "char_indices": [],
+      "score": 8.2526,
+      "report_confidence": 62.5026,
+      "detail": {
+        "raw_document_score": 8.2526,
+        "fused_score": 8.2526,
         "support_count": 5,
         "zone": "invoice_large_text_field",
         "evidence": {
-          "local_ela": 0.0095,
-          "local_noise": 0.4632,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.0457,
+          "local_noise": 0.0794,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 107.914,
+        "threshold_score": 107.5026,
         "threshold_score_mode": "single_threshold"
       }
     },
@@ -94,56 +587,674 @@
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        475,
-        1005,
+        485,
+        2521,
+        339,
+        87
+      ],
+      "char_indices": [],
+      "score": 8.0447,
+      "report_confidence": 62.2947,
+      "detail": {
+        "raw_document_score": 7.8617,
+        "fused_score": 8.0447,
+        "support_count": 5,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.059,
+          "local_noise": 0.1385,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.2947,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3470,
+        2664,
+        321,
+        87
+      ],
+      "char_indices": [],
+      "score": 8.0156,
+      "report_confidence": 62.2656,
+      "detail": {
+        "raw_document_score": 7.9656,
+        "fused_score": 8.0156,
+        "support_count": 5,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0509,
+          "local_noise": 0.0913,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.2656,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1477,
+        2249,
+        129,
+        81
+      ],
+      "char_indices": [],
+      "score": 8.1258,
+      "report_confidence": 62.1258,
+      "detail": {
+        "raw_document_score": 8.1258,
+        "fused_score": 8.1258,
+        "support_count": 4,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0484,
+          "local_noise": 0.1039,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.1258,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        759,
+        2370,
+        216,
+        70
+      ],
+      "char_indices": [],
+      "score": 8.1116,
+      "report_confidence": 62.1116,
+      "detail": {
+        "raw_document_score": 8.1116,
+        "fused_score": 8.1116,
+        "support_count": 4,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0431,
+          "local_noise": 0.0908,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.1116,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1143,
+        1542,
+        213,
+        74
+      ],
+      "char_indices": [],
+      "score": 8.0885,
+      "report_confidence": 62.0885,
+      "detail": {
+        "raw_document_score": 8.0885,
+        "fused_score": 8.0885,
+        "support_count": 4,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0404,
+          "local_noise": 0.0665,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.0885,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1242,
+        3139,
+        100,
+        109
+      ],
+      "char_indices": [],
+      "score": 8.0411,
+      "report_confidence": 62.0411,
+      "detail": {
+        "raw_document_score": 8.0411,
+        "fused_score": 8.0411,
+        "support_count": 4,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0078,
+          "local_noise": 0.0301,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 107.0411,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2871,
+        2346,
+        178,
+        87
+      ],
+      "char_indices": [],
+      "score": 8.0242,
+      "report_confidence": 61.7742,
+      "detail": {
+        "raw_document_score": 8.0242,
+        "fused_score": 8.0242,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0674,
+          "local_noise": 0.1482,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.7742,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3691,
+        2497,
+        92,
+        85
+      ],
+      "char_indices": [],
+      "score": 8.0184,
+      "report_confidence": 61.7684,
+      "detail": {
+        "raw_document_score": 8.0184,
+        "fused_score": 8.0184,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0685,
+          "local_noise": 0.1412,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.7684,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1762,
+        2360,
+        177,
+        85
+      ],
+      "char_indices": [],
+      "score": 8.005,
+      "report_confidence": 61.755,
+      "detail": {
+        "raw_document_score": 8.005,
+        "fused_score": 8.005,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0609,
+          "local_noise": 0.1301,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.755,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3724,
+        2350,
+        143,
+        64
+      ],
+      "char_indices": [],
+      "score": 7.9943,
+      "report_confidence": 61.7443,
+      "detail": {
+        "raw_document_score": 7.9943,
+        "fused_score": 7.9943,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0557,
+          "local_noise": 0.1208,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.7443,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1233,
+        2520,
+        168,
+        90
+      ],
+      "char_indices": [],
+      "score": 7.9472,
+      "report_confidence": 61.6972,
+      "detail": {
+        "raw_document_score": 7.9472,
+        "fused_score": 7.9472,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0332,
+          "local_noise": 0.0797,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.6972,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2548,
+        1646,
+        163,
+        91
+      ],
+      "char_indices": [],
+      "score": 7.9445,
+      "report_confidence": 61.6945,
+      "detail": {
+        "raw_document_score": 7.9445,
+        "fused_score": 7.9445,
+        "support_count": 3,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.037,
+          "local_noise": 0.0748,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.6945,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2851,
+        2506,
+        99,
+        84
+      ],
+      "char_indices": [],
+      "score": 7.8638,
+      "report_confidence": 61.3638,
+      "detail": {
+        "raw_document_score": 7.8638,
+        "fused_score": 7.8638,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0626,
+          "local_noise": 0.139,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3638,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1030,
+        2525,
+        102,
+        81
+      ],
+      "char_indices": [],
+      "score": 7.8592,
+      "report_confidence": 61.3592,
+      "detail": {
+        "raw_document_score": 7.8592,
+        "fused_score": 7.8592,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0616,
+          "local_noise": 0.1344,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3592,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        481,
+        2660,
+        214,
+        100
+      ],
+      "char_indices": [],
+      "score": 7.8578,
+      "report_confidence": 61.3578,
+      "detail": {
+        "raw_document_score": 7.8578,
+        "fused_score": 7.8578,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0618,
+          "local_noise": 0.1327,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3578,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        2617,
+        2539,
+        99,
+        56
+      ],
+      "char_indices": [],
+      "score": 7.8555,
+      "report_confidence": 61.3555,
+      "detail": {
+        "raw_document_score": 7.8555,
+        "fused_score": 7.8555,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0581,
+          "local_noise": 0.132,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3555,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        480,
+        2363,
+        179,
+        87
+      ],
+      "char_indices": [],
+      "score": 7.8529,
+      "report_confidence": 61.3529,
+      "detail": {
+        "raw_document_score": 7.8529,
+        "fused_score": 7.8529,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0573,
+          "local_noise": 0.1295,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3529,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        3754,
+        1867,
+        111,
+        73
+      ],
+      "char_indices": [],
+      "score": 7.8277,
+      "report_confidence": 61.3277,
+      "detail": {
+        "raw_document_score": 7.8277,
+        "fused_score": 7.8277,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.052,
+          "local_noise": 0.1042,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3277,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1493,
+        2518,
+        101,
+        89
+      ],
+      "char_indices": [],
+      "score": 7.8113,
+      "report_confidence": 61.3113,
+      "detail": {
+        "raw_document_score": 7.8113,
+        "fused_score": 7.8113,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0396,
+          "local_noise": 0.0921,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3113,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_region",
+      "label": "文字篡改",
+      "line_index": -1,
+      "bbox": [
+        1865,
+        2005,
+        103,
+        95
+      ],
+      "char_indices": [],
+      "score": 7.8025,
+      "report_confidence": 61.3025,
+      "detail": {
+        "raw_document_score": 7.8025,
+        "fused_score": 7.8025,
+        "support_count": 2,
+        "zone": "invoice_large_text_field",
+        "evidence": {
+          "local_ela": 0.0477,
+          "local_noise": 0.0784,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 106.3025,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        1889,
+        4572,
+        175,
+        82
+      ],
+      "char_indices": [],
+      "score": 8.0502,
+      "report_confidence": 73.1592,
+      "detail": {
+        "raw_document_score": 8.0502,
+        "fused_score": 8.0502,
+        "zone": "invoice_token_patch",
+        "source_bbox": [
+          1961,
+          4604,
+          31,
+          18
+        ],
+        "source_key": "1961,4604,31,18",
+        "token_bbox": [
+          1961,
+          4604,
+          31,
+          18
+        ],
+        "support_count": 2,
+        "background_contrast": 0.6423,
+        "background_flatness": 0.0,
+        "component_ratio": 0.0215,
+        "edge_strength": 0.3557,
+        "token_fused_score": 0.1408,
+        "bbox_fused_score": 0.0693,
+        "evidence": {
+          "local_ela": 0.0425,
+          "local_noise": 0.0729,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 65.1592,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        2061,
+        5089,
         110,
         54
       ],
       "char_indices": [],
-      "score": 8.35,
-      "report_confidence": 62.1,
+      "score": 7.9347,
+      "report_confidence": 73.0599,
       "detail": {
-        "raw_document_score": 8.35,
-        "fused_score": 8.35,
-        "support_count": 3,
-        "zone": "invoice_large_text_field",
+        "raw_document_score": 7.9347,
+        "fused_score": 7.9347,
+        "zone": "invoice_token_patch",
+        "source_bbox": [
+          1818,
+          5042,
+          2163,
+          83
+        ],
+        "source_key": "1818,5042,2163,83",
+        "token_bbox": [
+          2097,
+          5107,
+          38,
+          18
+        ],
+        "support_count": 2,
+        "background_contrast": 0.5382,
+        "background_flatness": 0.1459,
+        "component_ratio": 0.0458,
+        "edge_strength": 0.3017,
+        "token_fused_score": 0.1031,
+        "bbox_fused_score": 0.0524,
         "evidence": {
-          "local_ela": 0.0081,
-          "local_noise": 0.4484,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.0298,
+          "local_noise": 0.0554,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 107.1,
-        "threshold_score_mode": "single_threshold"
-      }
-    },
-    {
-      "type": "text_region",
-      "label": "文字篡改",
-      "line_index": -1,
-      "bbox": [
-        1973,
-        403,
-        128,
-        55
-      ],
-      "char_indices": [],
-      "score": 8.319,
-      "report_confidence": 62.069,
-      "detail": {
-        "raw_document_score": 8.319,
-        "fused_score": 8.319,
-        "support_count": 3,
-        "zone": "invoice_large_text_field",
-        "evidence": {
-          "local_ela": 0.0096,
-          "local_noise": 0.4132,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
-        },
-        "threshold_score": 107.069,
+        "threshold_score": 65.0599,
         "threshold_score_mode": "single_threshold"
       }
     },
@@ -152,31 +1263,226 @@
       "label": "噪声篡改",
       "line_index": -1,
       "bbox": [
-        1291,
-        1392,
-        13,
+        551,
+        3171,
+        62,
+        51
+      ],
+      "char_indices": [],
+      "score": 8.0158,
+      "report_confidence": 71.5394,
+      "detail": {
+        "raw_document_score": 8.0158,
+        "fused_score": 8.0158,
+        "zone": "invoice_token_patch",
+        "source_bbox": [
+          569,
+          3183,
+          26,
+          27
+        ],
+        "source_key": "569,3183,26,27",
+        "token_bbox": [
+          569,
+          3183,
+          26,
+          27
+        ],
+        "support_count": 2,
+        "background_contrast": 0.3152,
+        "background_flatness": 0.0,
+        "component_ratio": 0.2581,
+        "edge_strength": 0.3628,
+        "token_fused_score": 0.2224,
+        "bbox_fused_score": 0.1527,
+        "evidence": {
+          "local_ela": 0.0671,
+          "local_noise": 0.1641,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 63.5394,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        580,
+        3624,
+        131,
+        45
+      ],
+      "char_indices": [],
+      "score": 7.91,
+      "report_confidence": 70.8385,
+      "detail": {
+        "raw_document_score": 7.91,
+        "fused_score": 7.91,
+        "zone": "invoice_token_patch",
+        "source_bbox": [
+          605,
+          3594,
+          2593,
+          71
+        ],
+        "source_key": "605,3594,2593,71",
+        "token_bbox": [
+          614,
+          3636,
+          63,
+          21
+        ],
+        "support_count": 2,
+        "background_contrast": 0.4031,
+        "background_flatness": 0.0,
+        "component_ratio": 0.1486,
+        "edge_strength": 0.1838,
+        "token_fused_score": 0.2063,
+        "bbox_fused_score": 0.1371,
+        "evidence": {
+          "local_ela": 0.0575,
+          "local_noise": 0.1477,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 62.8385,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        1481,
+        1318,
+        20,
+        23
+      ],
+      "char_indices": [],
+      "score": 12.7387,
+      "report_confidence": 45.1519,
+      "detail": {
+        "raw_score": 10.9572,
+        "global_score": 4.7655,
+        "row_score": 14.7522,
+        "support_count": 1,
+        "component_count": 1,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 11.1392,
+        "fused_score": 12.7387,
+        "evidence": {
+          "local_ela": 0.0931,
+          "local_noise": 0.1033,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 30.1519,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        3444,
+        815,
+        17,
+        20
+      ],
+      "char_indices": [],
+      "score": 12.1007,
+      "report_confidence": 44.6839,
+      "detail": {
+        "raw_score": 9.378,
+        "global_score": 9.6391,
+        "row_score": 9.2179,
+        "support_count": 1,
+        "component_count": 1,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 10.0021,
+        "fused_score": 12.1007,
+        "evidence": {
+          "local_ela": 0.0868,
+          "local_noise": 0.1458,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 29.6839,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        1607,
+        1265,
+        16,
+        15
+      ],
+      "char_indices": [],
+      "score": 11.6806,
+      "report_confidence": 44.1206,
+      "detail": {
+        "raw_score": 9.3746,
+        "global_score": 7.686,
+        "row_score": 10.4095,
+        "support_count": 1,
+        "component_count": 1,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 9.9997,
+        "fused_score": 11.6806,
+        "evidence": {
+          "local_ela": 0.0938,
+          "local_noise": 0.11,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 29.1206,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        2305,
+        923,
+        17,
         16
       ],
       "char_indices": [],
-      "score": 14.795,
-      "report_confidence": 49.1326,
+      "score": 11.0167,
+      "report_confidence": 43.4911,
       "detail": {
-        "raw_score": 5.8124,
-        "global_score": 8.3567,
-        "row_score": 4.253,
+        "raw_score": 8.3049,
+        "global_score": 6.7116,
+        "row_score": 9.2815,
         "support_count": 1,
         "component_count": 1,
         "zone": "text_noise_consistency",
-        "raw_document_score": 7.4349,
-        "fused_score": 14.795,
+        "raw_document_score": 9.2295,
+        "fused_score": 11.0167,
         "evidence": {
-          "local_ela": 0.0337,
-          "local_noise": 0.5844,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.0962,
+          "local_noise": 0.1186,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 34.1326,
+        "threshold_score": 28.4911,
         "threshold_score_mode": "single_threshold"
       }
     },
@@ -185,164 +1491,69 @@
       "label": "噪声篡改",
       "line_index": -1,
       "bbox": [
-        2044,
-        563,
-        11,
-        28
+        3184,
+        837,
+        51,
+        32
       ],
       "char_indices": [],
-      "score": 10.3233,
-      "report_confidence": 43.3093,
+      "score": 10.3949,
+      "report_confidence": 43.0421,
       "detail": {
-        "raw_score": 5.211,
-        "global_score": 2.5302,
-        "row_score": 6.854,
-        "support_count": 1,
-        "component_count": 1,
-        "zone": "text_noise_consistency",
-        "raw_document_score": 7.0019,
-        "fused_score": 10.3233,
-        "evidence": {
-          "local_ela": 0.0442,
-          "local_noise": 0.2465,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
-        },
-        "threshold_score": 28.3093,
-        "threshold_score_mode": "single_threshold"
-      }
-    },
-    {
-      "type": "region_anomaly",
-      "label": "局部篡改",
-      "line_index": -1,
-      "bbox": [
-        1444,
-        760,
-        152,
-        152
-      ],
-      "char_indices": [],
-      "score": 5.3977,
-      "report_confidence": 37.5977,
-      "detail": {
-        "window_size": 152,
-        "raw_score": 7.2992,
-        "context_score": 0.616,
-        "final_score": 7.7303,
-        "support_count": 1,
-        "raw_document_score": 2.4937,
-        "fused_score": 5.3977,
-        "evidence": {
-          "local_ela": 0.004,
-          "local_noise": 0.2171,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
-        },
-        "threshold_score": 12.5977,
-        "threshold_score_mode": "single_threshold"
-      }
-    },
-    {
-      "type": "region_anomaly",
-      "label": "局部篡改",
-      "line_index": -1,
-      "bbox": [
-        304,
-        684,
-        152,
-        152
-      ],
-      "char_indices": [],
-      "score": 5.2973,
-      "report_confidence": 37.4973,
-      "detail": {
-        "window_size": 152,
-        "raw_score": 7.1211,
-        "context_score": 0.5897,
-        "final_score": 7.5338,
-        "support_count": 1,
-        "raw_document_score": 2.4303,
-        "fused_score": 5.2973,
-        "evidence": {
-          "local_ela": 0.0042,
-          "local_noise": 0.214,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
-        },
-        "threshold_score": 12.4973,
-        "threshold_score_mode": "single_threshold"
-      }
-    },
-    {
-      "type": "region_anomaly",
-      "label": "局部篡改",
-      "line_index": -1,
-      "bbox": [
-        1140,
-        836,
-        152,
-        152
-      ],
-      "char_indices": [],
-      "score": 3.7535,
-      "report_confidence": 35.9535,
-      "detail": {
-        "window_size": 152,
-        "raw_score": 6.3497,
-        "context_score": 0.315,
-        "final_score": 6.5702,
-        "support_count": 1,
-        "raw_document_score": 2.1194,
-        "fused_score": 3.7535,
-        "evidence": {
-          "local_ela": 0.0124,
-          "local_noise": 0.1101,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
-        },
-        "threshold_score": 10.9535,
-        "threshold_score_mode": "single_threshold"
-      }
-    },
-    {
-      "type": "region_anomaly",
-      "label": "局部篡改",
-      "line_index": -1,
-      "bbox": [
-        1064,
-        0,
-        305,
-        305
-      ],
-      "char_indices": [],
-      "score": 3.6355,
-      "report_confidence": 28.2355,
-      "detail": {
-        "window_size": 305,
-        "raw_score": 7.0751,
-        "context_score": 0.4489,
-        "final_score": 7.3458,
+        "raw_score": 6.6975,
+        "global_score": 6.8502,
+        "row_score": 6.6038,
         "support_count": 3,
-        "raw_document_score": 2.4296,
-        "fused_score": 3.6355,
+        "component_count": 3,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 8.1222,
+        "fused_score": 10.3949,
         "evidence": {
-          "local_ela": 0.0278,
-          "local_noise": 0.0724,
-          "global_ela": 0.0027,
-          "global_noise": 0.2762,
-          "document_score": 0.5039
+          "local_ela": 0.0752,
+          "local_noise": 0.1618,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
         },
-        "threshold_score": 3.2355,
+        "threshold_score": 28.0421,
+        "threshold_score_mode": "single_threshold"
+      }
+    },
+    {
+      "type": "text_noise_anomaly",
+      "label": "噪声篡改",
+      "line_index": -1,
+      "bbox": [
+        1463,
+        1389,
+        31,
+        16
+      ],
+      "char_indices": [],
+      "score": 10.2797,
+      "report_confidence": 42.8565,
+      "detail": {
+        "raw_score": 6.7078,
+        "global_score": 4.6369,
+        "row_score": 7.9771,
+        "support_count": 2,
+        "component_count": 2,
+        "zone": "text_noise_consistency",
+        "raw_document_score": 8.1796,
+        "fused_score": 10.2797,
+        "evidence": {
+          "local_ela": 0.0998,
+          "local_noise": 0.1442,
+          "global_ela": 0.0203,
+          "global_noise": 0.1802,
+          "document_score": 0.582
+        },
+        "threshold_score": 27.8565,
         "threshold_score_mode": "single_threshold"
       }
     }
   ],
-  "candidate_count": 20,
+  "candidate_count": 104,
   "reportable_candidate_count": 8,
   "top_candidates": [
     {
@@ -350,110 +1561,110 @@
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        209,
-        707,
-        282,
-        66
+        1178,
+        1868,
+        2451,
+        109
       ],
-      "score": 8.5176,
-      "report_confidence": 63.0176
+      "score": 8.9088,
+      "report_confidence": 63.9088
     },
     {
       "type": "text_region",
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        1341,
-        795,
-        282,
-        66
+        2794,
+        1517,
+        1096,
+        79
       ],
-      "score": 8.5175,
-      "report_confidence": 63.0175
+      "score": 8.8115,
+      "report_confidence": 63.8115
     },
     {
       "type": "text_region",
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        735,
-        426,
-        198,
-        53
+        386,
+        2008,
+        1001,
+        76
       ],
-      "score": 8.664,
-      "report_confidence": 62.914
+      "score": 8.7054,
+      "report_confidence": 63.7054
     },
     {
       "type": "text_region",
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        475,
-        1005,
-        110,
-        54
+        1236,
+        1755,
+        2052,
+        98
       ],
-      "score": 8.35,
-      "report_confidence": 62.1
+      "score": 8.6157,
+      "report_confidence": 63.6157
     },
     {
       "type": "text_region",
       "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        1973,
-        403,
-        128,
-        55
+        3399,
+        2006,
+        453,
+        72
       ],
-      "score": 8.319,
-      "report_confidence": 62.069
+      "score": 8.6114,
+      "report_confidence": 63.6114
     },
     {
-      "type": "text_noise_anomaly",
-      "label": "噪声篡改",
+      "type": "text_region",
+      "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        1291,
-        1392,
-        13,
-        16
+        2065,
+        2110,
+        719,
+        103
       ],
-      "score": 14.795,
-      "report_confidence": 49.1326
+      "score": 8.5232,
+      "report_confidence": 63.5232
     },
     {
-      "type": "text_noise_anomaly",
-      "label": "噪声篡改",
+      "type": "text_region",
+      "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        2044,
-        563,
-        11,
-        28
+        932,
+        2656,
+        943,
+        105
       ],
-      "score": 10.3233,
-      "report_confidence": 43.3093
+      "score": 8.4783,
+      "report_confidence": 63.4783
     },
     {
-      "type": "region_anomaly",
-      "label": "局部篡改",
+      "type": "text_region",
+      "label": "文字篡改",
       "line_index": -1,
       "bbox": [
-        1444,
-        760,
-        152,
-        152
+        2821,
+        1637,
+        610,
+        81
       ],
-      "score": 5.3977,
-      "report_confidence": 37.5977
+      "score": 8.4755,
+      "report_confidence": 63.4755
     }
   ],
   "evidence": {
-    "ela_score": 0.0027,
-    "noise_score": 0.2762,
-    "document_score": 0.5039
+    "ela_score": 0.0203,
+    "noise_score": 0.1802,
+    "document_score": 0.582
   },
   "evidence_artifacts": {},
   "threshold_score_mode": "single_threshold",

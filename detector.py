@@ -55,6 +55,11 @@ class UniversalTamperDetector:
     LOCAL_NOISE_WEIGHT = 12
     MAX_REPORT_CANDIDATES = 8
     REPORT_CONFIDENCE_THRESHOLD = 0.0
+    COMPONENT_PATCH_ZONES = {
+        "component_patch_overlay",
+        "invoice_token_patch",
+        "message_bubble_patch",
+    }
 
     def __init__(
         self,
@@ -116,6 +121,13 @@ class UniversalTamperDetector:
         )
         enriched_candidates.extend(
             self._build_invoice_field_candidates(
+                gray=gray,
+                evidence_bundle=evidence_bundle,
+                candidates=enriched_candidates,
+            )
+        )
+        enriched_candidates.extend(
+            self._build_component_patch_candidates(
                 gray=gray,
                 evidence_bundle=evidence_bundle,
                 candidates=enriched_candidates,
@@ -702,6 +714,586 @@ class UniversalTamperDetector:
             )
         return merged
 
+    def _build_component_patch_candidates(
+        self,
+        gray: np.ndarray,
+        evidence_bundle: EvidenceBundle,
+        candidates: list[TamperRegion],
+    ) -> list[TamperRegion]:
+        component_boxes = self.document_detector._filter_noise_component_boxes(
+            gray,
+            self.document_detector._text_component_boxes(gray),
+        )
+        if len(component_boxes) < 4:
+            return []
+
+        fused_map = self._build_fused_evidence_map(evidence_bundle)
+        image_bbox = (0, 0, gray.shape[1], gray.shape[0])
+        results: list[TamperRegion] = []
+        source_counts: dict[str, int] = {}
+        seen_token_boxes: list[tuple[int, int, int, int]] = []
+
+        source_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.detection_type == "text_region"
+            and str(candidate.detail.get("zone", "")) in {
+                "generic_text_block",
+                "invoice_large_text_field",
+                "invoice_header_stamp",
+            }
+        ]
+        for source in sorted(source_candidates, key=lambda item: item.score, reverse=True):
+            source_key = self._bbox_key(source.bbox)
+            if source_counts.get(source_key, 0) >= 3:
+                continue
+            zone = self._component_patch_zone(gray, source.bbox, str(source.detail.get("zone", "")))
+            if not self._component_patch_zone_enabled(gray, zone, source.bbox):
+                continue
+            clusters = self._component_clusters_near_bbox(
+                component_boxes=component_boxes,
+                source_bbox=source.bbox,
+            )
+            source_candidates_local: list[tuple[TamperRegion, tuple[int, int, int, int]]] = []
+            for cluster_boxes in clusters:
+                for refined_cluster in self._component_subclusters(cluster_boxes):
+                    token_bbox = self._union_boxes_many(refined_cluster)
+                    if any(self._is_duplicate_box(token_bbox, seen_box) for seen_box in seen_token_boxes):
+                        continue
+                    candidate = self._build_component_patch_candidate(
+                        gray=gray,
+                        evidence_bundle=evidence_bundle,
+                        fused_map=fused_map,
+                        token_boxes=refined_cluster,
+                        source_bbox=source.bbox,
+                        source_key=source_key,
+                        zone=zone,
+                        image_bbox=image_bbox,
+                    )
+                    if candidate is None:
+                        continue
+                    source_candidates_local.append((candidate, token_bbox))
+            for candidate, token_bbox in sorted(
+                source_candidates_local,
+                key=lambda item: item[0].score,
+                reverse=True,
+            ):
+                if source_counts.get(source_key, 0) >= 3:
+                    break
+                if self._is_duplicate(candidate, results):
+                    continue
+                results.append(candidate)
+                seen_token_boxes.append(token_bbox)
+                source_counts[source_key] = source_counts.get(source_key, 0) + 1
+
+        row_groups = self.document_detector._group_text_components_by_row(component_boxes)
+        for row_indices in row_groups:
+            row_boxes = [component_boxes[index] for index in row_indices]
+            row_bbox = self._union_boxes_many(row_boxes)
+            row_key = self._bbox_key(row_bbox)
+            if source_counts.get(row_key, 0) >= 2:
+                continue
+
+            zone = self._component_patch_zone(gray, row_bbox, "")
+            if not self._component_patch_zone_enabled(gray, zone, row_bbox):
+                continue
+            clusters = self._cluster_boxes_by_gap(
+                row_boxes,
+                max_gap=max(18, int(np.median([box[2] for box in row_boxes]) * 1.2)),
+            )
+            row_candidates_local: list[tuple[TamperRegion, tuple[int, int, int, int]]] = []
+            for cluster_boxes in clusters:
+                if len(cluster_boxes) < 2 or len(cluster_boxes) > 6:
+                    continue
+                for refined_cluster in self._component_subclusters(cluster_boxes):
+                    token_bbox = self._union_boxes_many(refined_cluster)
+                    if token_bbox[2] < 18 or token_bbox[3] < 18 or token_bbox[2] > 180 or token_bbox[3] > 120:
+                        continue
+                    if any(self._is_duplicate_box(token_bbox, seen_box) for seen_box in seen_token_boxes):
+                        continue
+
+                    candidate = self._build_component_patch_candidate(
+                        gray=gray,
+                        evidence_bundle=evidence_bundle,
+                        fused_map=fused_map,
+                        token_boxes=refined_cluster,
+                        source_bbox=row_bbox,
+                        source_key=row_key,
+                        zone=zone,
+                        image_bbox=image_bbox,
+                    )
+                    if candidate is None:
+                        continue
+                    row_candidates_local.append((candidate, token_bbox))
+            for candidate, token_bbox in sorted(
+                row_candidates_local,
+                key=lambda item: item[0].score,
+                reverse=True,
+            ):
+                if source_counts.get(row_key, 0) >= 2:
+                    break
+                if self._is_duplicate(candidate, results):
+                    continue
+                results.append(candidate)
+                seen_token_boxes.append(token_bbox)
+                source_counts[row_key] = source_counts.get(row_key, 0) + 1
+
+        deduped: list[TamperRegion] = []
+        for candidate in sorted(results, key=lambda item: item.score, reverse=True):
+            if self._is_duplicate(candidate, deduped):
+                continue
+            deduped.append(candidate)
+        return deduped[:24]
+
+    def _component_clusters_near_bbox(
+        self,
+        component_boxes: list[tuple[int, int, int, int]],
+        source_bbox: tuple[int, int, int, int],
+    ) -> list[list[tuple[int, int, int, int]]]:
+        source_x, source_y, source_w, source_h = source_bbox
+        inside_boxes = [
+            box
+            for box in component_boxes
+            if source_x <= self._center_x(box) <= source_x + source_w
+            and source_y <= self._center_y(box) <= source_y + source_h
+        ]
+        if len(inside_boxes) < 2:
+            return []
+
+        rows = self._group_boxes_by_row(
+            inside_boxes,
+            row_tolerance=max(12.0, source_h * 0.45),
+        )
+        clusters: list[list[tuple[int, int, int, int]]] = []
+        for row_boxes in rows:
+            if len(row_boxes) < 2:
+                continue
+            max_gap = max(16, int(np.median([box[2] for box in row_boxes]) * 1.15))
+            for cluster in self._cluster_boxes_by_gap(row_boxes, max_gap=max_gap):
+                if len(cluster) < 2 or len(cluster) > 8:
+                    continue
+                cluster_bbox = self._union_boxes_many(cluster)
+                if cluster_bbox[2] < 18 or cluster_bbox[3] < 18:
+                    continue
+                if cluster_bbox[2] > max(int(source_w * 0.48), 200):
+                    continue
+                clusters.append(cluster)
+        return clusters
+
+    @staticmethod
+    def _component_subclusters(
+        cluster_boxes: list[tuple[int, int, int, int]],
+    ) -> list[list[tuple[int, int, int, int]]]:
+        ordered = sorted(cluster_boxes, key=lambda item: item[0])
+        if len(ordered) <= 4:
+            return [ordered]
+
+        windows: list[list[tuple[int, int, int, int]]] = [ordered]
+        upper = min(4, len(ordered))
+        for window_size in range(2, upper + 1):
+            for start in range(0, len(ordered) - window_size + 1):
+                windows.append(ordered[start : start + window_size])
+
+        deduped: list[list[tuple[int, int, int, int]]] = []
+        seen: set[tuple[int, int, int, int]] = set()
+        for item in windows:
+            bbox = UniversalTamperDetector._union_boxes_many(item)
+            if bbox in seen:
+                continue
+            seen.add(bbox)
+            deduped.append(item)
+        return deduped
+
+    def _build_component_patch_candidate(
+        self,
+        gray: np.ndarray,
+        evidence_bundle: EvidenceBundle,
+        fused_map: np.ndarray,
+        token_boxes: list[tuple[int, int, int, int]],
+        source_bbox: tuple[int, int, int, int],
+        source_key: str,
+        zone: str,
+        image_bbox: tuple[int, int, int, int],
+    ) -> TamperRegion | None:
+        token_bbox = self._union_boxes_many(token_boxes)
+        if token_bbox[2] < 18 or token_bbox[3] < 18:
+            return None
+        if not self._component_patch_token_allowed(
+            gray=gray,
+            zone=zone,
+            token_boxes=token_boxes,
+            token_bbox=token_bbox,
+            source_bbox=source_bbox,
+        ):
+            return None
+
+        best_bbox: tuple[int, int, int, int] | None = None
+        best_rank = -1.0
+        best_metrics: dict[str, float] | None = None
+        for bbox in self._component_patch_variants(token_bbox, zone, image_bbox):
+            metrics = self._component_patch_metrics(
+                gray=gray,
+                fused_map=fused_map,
+                bbox=bbox,
+                token_boxes=token_boxes,
+                token_bbox=token_bbox,
+            )
+            if metrics is None:
+                continue
+            rank = (
+                1.8 * metrics["token_fused"]
+                + 1.1 * metrics["bbox_fused"]
+                + 0.9 * metrics["background_contrast"]
+                + 0.8 * metrics["background_flatness"]
+                + 0.7 * metrics["edge_strength"]
+            )
+            token_area = max(token_bbox[2] * token_bbox[3], 1)
+            area_ratio = (bbox[2] * bbox[3]) / token_area
+            if zone == "message_bubble_patch":
+                rank -= min(area_ratio * 0.04, 0.55)
+            if (
+                zone == "invoice_token_patch"
+                and metrics["token_fused"] >= 0.25
+                and metrics["background_contrast"] < 0.5
+            ):
+                rank -= min(area_ratio * 0.02, 0.35)
+            if not 0.02 <= metrics["component_ratio"] <= 0.45:
+                rank -= 0.5
+            if bbox[2] * bbox[3] > max(source_bbox[2] * source_bbox[3] * 1.25, 72000):
+                rank -= 0.4
+            if rank <= best_rank:
+                continue
+            best_bbox = bbox
+            best_rank = rank
+            best_metrics = metrics
+
+        if best_bbox is None or best_metrics is None:
+            return None
+        min_rank = 1.0 if zone == "invoice_token_patch" else 1.15
+        if best_rank < min_rank:
+            return None
+
+        support_count = len(token_boxes)
+        score = (
+            5.9
+            + 1.9 * best_metrics["token_fused"]
+            + 1.0 * best_metrics["bbox_fused"]
+            + 0.85 * best_metrics["background_contrast"]
+            + 0.7 * best_metrics["background_flatness"]
+            + 0.75 * best_metrics["edge_strength"]
+            + 0.12 * min(support_count, 6)
+            + self.GLOBAL_EVIDENCE_WEIGHT * (evidence_bundle.ela_score + evidence_bundle.noise_score)
+        )
+        if zone == "invoice_token_patch":
+            score += 0.55
+        elif zone == "message_bubble_patch":
+            score += 0.35
+
+        local_ela = self._bbox_score(evidence_bundle.ela_map, best_bbox)
+        local_noise = self._bbox_score(evidence_bundle.noise_map, best_bbox)
+        return TamperRegion(
+            detection_type="text_noise_anomaly",
+            label="噪声篡改",
+            bbox=best_bbox,
+            score=float(score),
+            detail={
+                "raw_document_score": round(float(score), 4),
+                "fused_score": round(float(score), 4),
+                "zone": zone,
+                "source_bbox": list(source_bbox),
+                "source_key": source_key,
+                "token_bbox": list(token_bbox),
+                "support_count": support_count,
+                "background_contrast": round(best_metrics["background_contrast"], 4),
+                "background_flatness": round(best_metrics["background_flatness"], 4),
+                "component_ratio": round(best_metrics["component_ratio"], 4),
+                "edge_strength": round(best_metrics["edge_strength"], 4),
+                "token_fused_score": round(best_metrics["token_fused"], 4),
+                "bbox_fused_score": round(best_metrics["bbox_fused"], 4),
+                "evidence": {
+                    "local_ela": round(local_ela, 4),
+                    "local_noise": round(local_noise, 4),
+                    "global_ela": round(evidence_bundle.ela_score, 4),
+                    "global_noise": round(evidence_bundle.noise_score, 4),
+                    "document_score": round(evidence_bundle.document_score, 4),
+                },
+            },
+            line_index=-1,
+            char_indices=[],
+        )
+
+    def _component_patch_variants(
+        self,
+        token_bbox: tuple[int, int, int, int],
+        zone: str,
+        image_bbox: tuple[int, int, int, int],
+    ) -> list[tuple[int, int, int, int]]:
+        _, _, token_w, token_h = token_bbox
+        if zone == "invoice_token_patch":
+            pad_pairs = (
+                (max(18, int(token_w * 0.55)), max(12, int(token_h * 0.45))),
+                (max(28, int(token_w * 0.95)), max(18, int(token_h * 0.75))),
+                (max(42, int(token_w * 1.25)), max(24, int(token_h * 1.1))),
+                (max(72, int(token_w * 2.2)), max(32, int(token_h * 1.25))),
+            )
+        elif zone == "message_bubble_patch":
+            pad_pairs = (
+                (max(18, int(token_w * 0.35)), max(10, int(token_h * 0.25))),
+                (max(34, int(token_w * 0.65)), max(18, int(token_h * 0.65))),
+                (max(62, int(token_w * 1.0)), max(32, int(token_h * 1.0))),
+            )
+        else:
+            pad_pairs = (
+                (max(20, int(token_w * 0.45)), max(12, int(token_h * 0.35))),
+                (max(32, int(token_w * 0.8)), max(18, int(token_h * 0.7))),
+                (max(46, int(token_w * 1.0)), max(24, int(token_h * 0.95))),
+            )
+
+        variants: list[tuple[int, int, int, int]] = []
+        for pad_x, pad_y in pad_pairs:
+            variants.append(
+                self._pad_bbox_within(
+                    token_bbox,
+                    image_bbox,
+                    pad_x=pad_x,
+                    pad_y=pad_y,
+                )
+            )
+
+        deduped: list[tuple[int, int, int, int]] = []
+        seen: set[tuple[int, int, int, int]] = set()
+        for bbox in variants:
+            if bbox[2] <= 0 or bbox[3] <= 0:
+                continue
+            if bbox in seen:
+                continue
+            seen.add(bbox)
+            deduped.append(bbox)
+        return deduped
+
+    def _component_patch_metrics(
+        self,
+        gray: np.ndarray,
+        fused_map: np.ndarray,
+        bbox: tuple[int, int, int, int],
+        token_boxes: list[tuple[int, int, int, int]],
+        token_bbox: tuple[int, int, int, int],
+    ) -> dict[str, float] | None:
+        x, y, w, h = bbox
+        if w < 18 or h < 18:
+            return None
+        patch = gray[y : y + h, x : x + w]
+        if patch.size == 0:
+            return None
+
+        mask = np.zeros((h, w), dtype=np.uint8)
+        component_area = 0
+        for box_x, box_y, box_w, box_h in token_boxes:
+            left = max(0, box_x - x)
+            top = max(0, box_y - y)
+            right = min(w, box_x + box_w - x)
+            bottom = min(h, box_y + box_h - y)
+            if left >= right or top >= bottom:
+                continue
+            cv2.rectangle(mask, (left, top), (right, bottom), 255, -1)
+            component_area += max(0, right - left) * max(0, bottom - top)
+        mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
+        background_pixels = patch[mask == 0]
+        if background_pixels.size < 36:
+            background_pixels = patch.reshape(-1)
+        background_mean = float(background_pixels.mean())
+        background_std = float(background_pixels.std())
+
+        ring_pad = max(6, min(w, h) // 6)
+        x0 = max(0, x - ring_pad)
+        y0 = max(0, y - ring_pad)
+        x1 = min(gray.shape[1], x + w + ring_pad)
+        y1 = min(gray.shape[0], y + h + ring_pad)
+        outer_patch = gray[y0:y1, x0:x1]
+        if outer_patch.size == 0:
+            return None
+        ring_mask = np.ones(outer_patch.shape, dtype=bool)
+        ring_mask[y - y0 : y - y0 + h, x - x0 : x - x0 + w] = False
+        ring_pixels = outer_patch[ring_mask]
+        if ring_pixels.size < 36:
+            ring_pixels = outer_patch.reshape(-1)
+        ring_mean = float(ring_pixels.mean())
+        ring_std = float(ring_pixels.std())
+
+        gradient_x = cv2.Sobel(outer_patch, cv2.CV_32F, 1, 0, ksize=3)
+        gradient_y = cv2.Sobel(outer_patch, cv2.CV_32F, 0, 1, ksize=3)
+        gradient = cv2.magnitude(gradient_x, gradient_y)
+        border_mask = np.zeros_like(gradient, dtype=np.uint8)
+        cv2.rectangle(
+            border_mask,
+            (x - x0, y - y0),
+            (x - x0 + w - 1, y - y0 + h - 1),
+            255,
+            thickness=max(2, ring_pad // 2),
+        )
+        edge_pixels = gradient[border_mask > 0]
+        edge_strength = float(edge_pixels.mean() / 255.0) if edge_pixels.size else 0.0
+
+        area = float(max(w * h, 1))
+        component_ratio = float(component_area) / area
+        background_contrast = abs(background_mean - ring_mean) / max(background_std, ring_std, 12.0)
+        background_flatness = max(0.0, 1.0 - background_std / 72.0)
+        return {
+            "bbox_fused": self._bbox_score(fused_map, bbox),
+            "token_fused": self._bbox_score(fused_map, token_bbox),
+            "background_contrast": float(background_contrast),
+            "background_flatness": float(background_flatness),
+            "component_ratio": float(component_ratio),
+            "edge_strength": float(edge_strength),
+        }
+
+    def _component_patch_zone(
+        self,
+        gray: np.ndarray,
+        source_bbox: tuple[int, int, int, int],
+        source_zone: str,
+    ) -> str:
+        if source_zone in {"invoice_large_text_field", "invoice_header_stamp"} or self._looks_like_invoice(gray):
+            return "invoice_token_patch"
+        message_card_bbox = self._find_message_card_bbox(gray)
+        if message_card_bbox is not None and self._center_in_box(source_bbox, message_card_bbox):
+            return "message_bubble_patch"
+        return "component_patch_overlay"
+
+    def _component_patch_zone_enabled(
+        self,
+        gray: np.ndarray,
+        zone: str,
+        source_bbox: tuple[int, int, int, int],
+    ) -> bool:
+        if zone == "invoice_token_patch":
+            return gray.shape[0] * 0.43 <= source_bbox[1] <= gray.shape[0] * 0.78
+        if zone == "message_bubble_patch":
+            message_card_bbox = self._find_message_card_bbox(gray)
+            return message_card_bbox is not None and self._center_in_box(source_bbox, message_card_bbox)
+        if zone == "component_patch_overlay":
+            return (
+                self._looks_like_receipt_photo(gray)
+                and self._has_receipt_patch_anchor(gray)
+                and gray.shape[0] * 0.35 <= source_bbox[1] <= gray.shape[0] * 0.86
+            )
+        return True
+
+    def _component_patch_token_allowed(
+        self,
+        gray: np.ndarray,
+        zone: str,
+        token_boxes: list[tuple[int, int, int, int]],
+        token_bbox: tuple[int, int, int, int],
+        source_bbox: tuple[int, int, int, int],
+    ) -> bool:
+        if zone == "invoice_token_patch":
+            return token_bbox[1] >= gray.shape[0] * 0.30 and len(token_boxes) <= 6
+        if zone == "message_bubble_patch":
+            message_card_bbox = self._find_message_card_bbox(gray)
+            if message_card_bbox is None or not self._center_in_box(token_bbox, message_card_bbox):
+                return False
+            if token_bbox[1] + token_bbox[3] / 2.0 > message_card_bbox[1] + message_card_bbox[3] * 0.72:
+                return False
+            source_right_gap = source_bbox[0] + source_bbox[2] - (token_bbox[0] + token_bbox[2])
+            source_left_gap = token_bbox[0] - source_bbox[0]
+            isolated_source = source_bbox[2] <= token_bbox[2] * 1.8
+            right_aligned = source_right_gap <= max(18, int(token_bbox[3] * 0.7))
+            far_from_left_text = source_left_gap >= source_bbox[2] * 0.55
+            return self._is_digit_like_component_cluster(token_boxes, token_bbox) and (
+                isolated_source or right_aligned or far_from_left_text
+            )
+        if zone == "component_patch_overlay":
+            return (
+                self._is_digit_like_component_cluster(token_boxes, token_bbox)
+                and source_bbox[1] >= gray.shape[0] * 0.35
+            )
+        return True
+
+    @staticmethod
+    def _looks_like_receipt_photo(gray: np.ndarray) -> bool:
+        height, width = gray.shape
+        return width <= 1100 and height >= width * 1.25
+
+    @staticmethod
+    def _has_receipt_patch_anchor(gray: np.ndarray) -> bool:
+        if not UniversalTamperDetector._looks_like_receipt_photo(gray):
+            return False
+        mask = np.where(gray >= 245, 255, 0).astype(np.uint8)
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_CLOSE,
+            cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21)),
+        )
+        component_count, _, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+        image_area = gray.shape[0] * gray.shape[1]
+        for component_id in range(1, component_count):
+            x, y, w, h, area = stats[component_id]
+            if area < max(6000, image_area * 0.012):
+                continue
+            if 90 <= w <= gray.shape[1] * 0.45 and 50 <= h <= gray.shape[0] * 0.18:
+                return True
+        return False
+
+    @staticmethod
+    def _find_message_card_bbox(gray: np.ndarray) -> tuple[int, int, int, int] | None:
+        height, width = gray.shape
+        if width < 1100 or height < 1000:
+            return None
+        mask = np.where(gray >= 245, 255, 0).astype(np.uint8)
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_CLOSE,
+            cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21)),
+        )
+        component_count, _, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+        image_area = float(height * width)
+        best_bbox: tuple[int, int, int, int] | None = None
+        best_area = 0
+        for component_id in range(1, component_count):
+            x, y, w, h, area = stats[component_id]
+            if area < image_area * 0.10:
+                continue
+            if x <= 0 or y <= height * 0.18:
+                continue
+            if w < width * 0.45 or w > width * 0.95:
+                continue
+            if h < height * 0.18 or h > height * 0.55:
+                continue
+            if y + h >= height * 0.88:
+                continue
+            if area > best_area:
+                best_area = int(area)
+                best_bbox = (int(x), int(y), int(w), int(h))
+        return best_bbox
+
+    @staticmethod
+    def _center_in_box(
+        bbox: tuple[int, int, int, int],
+        outer_bbox: tuple[int, int, int, int],
+    ) -> bool:
+        x, y, w, h = bbox
+        ox, oy, ow, oh = outer_bbox
+        center_x = x + w / 2.0
+        center_y = y + h / 2.0
+        return ox <= center_x <= ox + ow and oy <= center_y <= oy + oh
+
+    @staticmethod
+    def _is_digit_like_component_cluster(
+        token_boxes: list[tuple[int, int, int, int]],
+        token_bbox: tuple[int, int, int, int],
+    ) -> bool:
+        if not 1 <= len(token_boxes) <= 3:
+            return False
+        _, _, token_w, token_h = token_bbox
+        if token_h < 24 or token_w > token_h * 2.7:
+            return False
+        ratios = [box[2] / max(box[3], 1) for box in token_boxes if box[3] > 0]
+        if not ratios:
+            return False
+        narrow_count = sum(1 for ratio in ratios if 0.18 <= ratio <= 0.92)
+        return narrow_count >= max(1, len(ratios) - 1) and float(np.median(ratios)) <= 0.86
+
     @staticmethod
     def _looks_like_invoice(gray: np.ndarray) -> bool:
         return gray.shape[1] >= 2000 and gray.shape[0] >= 1200
@@ -802,11 +1394,16 @@ class UniversalTamperDetector:
                 best_digit_candidate,
             )
         )
+        strong_component_patches = cls._strong_component_patch_candidates(
+            candidates,
+            has_strong_refinement,
+        )
         if single_threshold_mode:
             filtered = [
                 candidate
                 for candidate in candidates
                 if cls._is_relaxed_report_candidate(candidate)
+                and not cls._is_component_patch_conflicting_candidate(candidate, strong_component_patches)
             ]
         else:
             filtered = [
@@ -818,6 +1415,7 @@ class UniversalTamperDetector:
                     best_time_candidate,
                     best_digit_candidate,
                 )
+                and not cls._is_component_patch_conflicting_candidate(candidate, strong_component_patches)
             ]
         selected: list[TamperRegion] = []
         limited_counts: dict[str, int] = {}
@@ -851,6 +1449,41 @@ class UniversalTamperDetector:
             if limited_key:
                 limited_counts[limited_key] = limited_counts.get(limited_key, 0) + 1
         return selected
+
+    @classmethod
+    def _strong_component_patch_candidates(
+        cls,
+        candidates: list[TamperRegion],
+        has_strong_refinement: bool,
+    ) -> list[TamperRegion]:
+        return [
+            candidate
+            for candidate in candidates
+            if str(candidate.detail.get("zone", "")) in cls.COMPONENT_PATCH_ZONES
+            and cls._is_reportable_candidate(candidate, has_strong_refinement)
+            and cls._report_confidence(candidate) >= 67.0
+        ]
+
+    @classmethod
+    def _is_component_patch_conflicting_candidate(
+        cls,
+        candidate: TamperRegion,
+        strong_component_patches: list[TamperRegion],
+    ) -> bool:
+        if len(strong_component_patches) < 2:
+            return False
+        if str(candidate.detail.get("zone", "")) in cls.COMPONENT_PATCH_ZONES:
+            return False
+        if any(
+            cls._bbox_iou(candidate.bbox, patch.bbox) > 0.02
+            or cls._bbox_overlap_ratio(candidate.bbox, patch.bbox) > 0.18
+            for patch in strong_component_patches
+        ):
+            return False
+        zone = str(candidate.detail.get("zone", ""))
+        if candidate.detection_type == "digit_window" and len(strong_component_patches) >= 3:
+            return True
+        return candidate.detection_type == "time_group" or zone == "evidence_text_noise_refinement"
 
     @classmethod
     def _report_priority(
@@ -917,6 +1550,11 @@ class UniversalTamperDetector:
                 score += 18.0
             else:
                 score -= 10.0
+        elif zone in {"component_patch_overlay", "message_bubble_patch", "invoice_token_patch"}:
+            if strict_ok:
+                score += 16.0 if zone == "invoice_token_patch" else 12.0
+            else:
+                score -= 8.0
         elif zone == "text_noise_consistency":
             score -= 15.0
         elif strict_ok:
@@ -953,6 +1591,60 @@ class UniversalTamperDetector:
 
         if zone == "evidence_text_noise_refinement":
             return cls._evidence_refinement_level(candidate) in {"strong", "medium"}
+
+        if zone == "invoice_token_patch":
+            return (
+                support_count >= 2
+                and candidate.score >= 7.5
+                and 0.02 <= cls._plain_detail_float(candidate, "component_ratio") <= 0.42
+                and (
+                    cls._plain_detail_float(candidate, "background_contrast") >= 0.8
+                    or cls._plain_detail_float(candidate, "token_fused_score") >= 0.30
+                )
+            )
+
+        if zone == "message_bubble_patch":
+            area = candidate.bbox[2] * candidate.bbox[3]
+            ratio = cls._plain_detail_float(candidate, "component_ratio")
+            contrast = cls._plain_detail_float(candidate, "background_contrast")
+            flatness = cls._plain_detail_float(candidate, "background_flatness")
+            return (
+                support_count >= 2
+                and candidate.score >= 7.1
+                and area >= 5000
+                and (
+                    (
+                        0.24 <= ratio <= 0.42
+                        and contrast >= 0.18
+                    )
+                    or (
+                        0.24 <= ratio <= 0.42
+                        and flatness >= 0.92
+                        and cls._plain_detail_float(candidate, "token_fused_score") >= 0.25
+                    )
+                    or (
+                        area >= 15000
+                        and 0.10 <= ratio <= 0.30
+                        and (contrast >= 0.8 or flatness >= 0.88)
+                    )
+                )
+            )
+
+        if zone == "component_patch_overlay":
+            area = candidate.bbox[2] * candidate.bbox[3]
+            return (
+                support_count >= 2
+                and candidate.score >= 7.2
+                and 0.08 <= cls._plain_detail_float(candidate, "component_ratio") <= 0.40
+                and (
+                    cls._plain_detail_float(candidate, "background_contrast") >= 0.75
+                    or cls._plain_detail_float(candidate, "token_fused_score") >= 0.10
+                    or (
+                        area >= 12000
+                        and cls._plain_detail_float(candidate, "background_contrast") >= 0.45
+                    )
+                )
+            )
 
         if candidate.detection_type == "time_group":
             return (
@@ -1014,6 +1706,29 @@ class UniversalTamperDetector:
             confidence += 7.0 * cls._plain_detail_float(candidate, "evidence_window_score")
             confidence += min(support_count, 4) * 0.8
             confidence -= min((candidate.bbox[2] * candidate.bbox[3]) / 1800.0, 8.0)
+        elif zone == "invoice_token_patch":
+            confidence += 58.0
+            confidence += 8.0 * cls._plain_detail_float(candidate, "background_contrast")
+            confidence += 6.0 * cls._plain_detail_float(candidate, "edge_strength")
+            confidence += 6.0 * cls._plain_detail_float(candidate, "background_flatness")
+            confidence += 4.5 * cls._plain_detail_float(candidate, "token_fused_score")
+            confidence -= min(area / 18000.0, 4.0)
+        elif zone == "message_bubble_patch":
+            confidence += 55.0
+            confidence += 8.0 * cls._plain_detail_float(candidate, "background_contrast")
+            confidence += 5.5 * cls._plain_detail_float(candidate, "edge_strength")
+            confidence += 5.0 * cls._plain_detail_float(candidate, "background_flatness")
+            confidence += 4.0 * cls._plain_detail_float(candidate, "token_fused_score")
+            if area < 5000:
+                confidence -= 6.0
+            confidence -= min(area / 22000.0, 4.0)
+        elif zone == "component_patch_overlay":
+            confidence += 54.0
+            confidence += 7.0 * cls._plain_detail_float(candidate, "background_contrast")
+            confidence += 5.0 * cls._plain_detail_float(candidate, "edge_strength")
+            confidence += 4.0 * cls._plain_detail_float(candidate, "background_flatness")
+            confidence += 3.5 * cls._plain_detail_float(candidate, "token_fused_score")
+            confidence -= min(area / 16000.0, 4.0)
         elif candidate.detection_type == "digit_window":
             confidence += 78.0
         elif candidate.detection_type == "time_group":
@@ -1047,6 +1762,14 @@ class UniversalTamperDetector:
         zone = str(candidate.detail.get("zone", ""))
         if zone == "evidence_text_noise_refinement":
             return zone, 2
+        if zone in {"invoice_token_patch", "message_bubble_patch", "component_patch_overlay"}:
+            source_key = str(
+                candidate.detail.get(
+                    "source_key",
+                    ",".join(str(int(value)) for value in candidate.bbox),
+                )
+            )
+            return f"{zone}:{source_key}", 3
         if candidate.detection_type in {"digit_window", "time_group", "region_anomaly"}:
             return candidate.detection_type, 1
         if candidate.detection_type == "text_noise_anomaly" and zone == "text_noise_consistency":

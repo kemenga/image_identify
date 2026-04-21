@@ -14,7 +14,7 @@ BASE_DOCUMENT_DEFAULTS = UniversalTamperDetector.document_tunable_defaults()
 # 直接手动调参区
 # 如果你更习惯直接改文件而不是传命令行参数，优先改这里。
 RUN_CONFIG = {
-    "image": str(BASE_DIR / "data/image.png"),
+    "image": str(BASE_DIR / "seed_dataset/tampered/doc_0001_t02_cross_doc_splice.png"),
     "output": str(BASE_DIR / "detected_result.png"),
     "report": str(BASE_DIR / "detected_report.json"),
     "max_detections": 50,

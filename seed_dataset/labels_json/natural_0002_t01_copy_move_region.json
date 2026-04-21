@@ -1,0 +1,22 @@
+{
+  "id": "natural_0002_t01_copy_move_region",
+  "source_type": "natural",
+  "original_image": "originals/natural/natural_0002_orig.png",
+  "tampered_image": "tampered/natural_0002_t01_copy_move_region.png",
+  "label_png": "labels_png/natural_0002_t01_copy_move_region检测结果.png",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Malibu_Feed_Bin_sign_and_storefront_2024.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/6/68/Malibu_Feed_Bin_sign_and_storefront_2024.jpg",
+  "tamper_method": "copy_move_region",
+  "boxes": [
+    {
+      "x": 2710,
+      "y": 1640,
+      "w": 428,
+      "h": 428,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "复制同图局部区域并移动覆盖"
+}

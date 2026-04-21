@@ -141,6 +141,10 @@ class TraditionalTamperDetector:
     MIN_CONTEXT_TOTAL_CHARS = 6
     MIN_CONTEXT_LINE_CHARS = 4
     SPECIAL_RULE_TYPES = {"digit_window", "time_group", "short_text"}
+    GLOBAL_SCAN_MAX_SIDE = 1600
+    GLOBAL_SCAN_MAX_WINDOWS = 12000
+    GLOBAL_SCAN_MIN_WINDOW = 12
+    GLOBAL_SCAN_MIN_STRIDE = 4
 
     def __init__(self, overrides: dict[str, object] | None = None):
         self.METHOD_WEIGHTS = dict(self.__class__.METHOD_WEIGHTS)
@@ -192,6 +196,10 @@ class TraditionalTamperDetector:
             "MAX_OUTPUT_DETECTIONS": cls.MAX_OUTPUT_DETECTIONS,
             "MIN_CONTEXT_TOTAL_CHARS": cls.MIN_CONTEXT_TOTAL_CHARS,
             "MIN_CONTEXT_LINE_CHARS": cls.MIN_CONTEXT_LINE_CHARS,
+            "GLOBAL_SCAN_MAX_SIDE": cls.GLOBAL_SCAN_MAX_SIDE,
+            "GLOBAL_SCAN_MAX_WINDOWS": cls.GLOBAL_SCAN_MAX_WINDOWS,
+            "GLOBAL_SCAN_MIN_WINDOW": cls.GLOBAL_SCAN_MIN_WINDOW,
+            "GLOBAL_SCAN_MIN_STRIDE": cls.GLOBAL_SCAN_MIN_STRIDE,
             "SPECIAL_RULE_TYPES": ",".join(sorted(cls.SPECIAL_RULE_TYPES)),
         }
 
@@ -600,14 +608,21 @@ class TraditionalTamperDetector:
         results: list[TamperRegion] = []
         for window_size in window_sizes:
             stride = max(12, window_size // 2)
+            scan_gray, scan_scale, scan_window_size, scan_stride, mapped_window_size = self._prepare_dense_scan(
+                gray=gray,
+                window_size=window_size,
+                stride=stride,
+            )
+            if scan_window_size <= 0:
+                continue
             windows: list[tuple[int, int, int, int]] = []
             feature_rows: list[np.ndarray] = []
 
-            for y in range(0, image_height - window_size + 1, stride):
-                for x in range(0, image_width - window_size + 1, stride):
-                    patch = gray[y : y + window_size, x : x + window_size]
+            for y in range(0, scan_gray.shape[0] - scan_window_size + 1, scan_stride):
+                for x in range(0, scan_gray.shape[1] - scan_window_size + 1, scan_stride):
+                    patch = scan_gray[y : y + scan_window_size, x : x + scan_window_size]
                     feature_rows.append(self._region_feature_vector(patch))
-                    windows.append((x, y, window_size, window_size))
+                    windows.append((x, y, scan_window_size, scan_window_size))
 
             if len(windows) < 8:
                 continue
@@ -631,8 +646,9 @@ class TraditionalTamperDetector:
 
             for index in top_indices:
                 raw_score = float(raw_scores[index])
-                bbox = windows[index]
-                context_score = self._region_context_score(gray, bbox, feature_matrix[index])
+                scan_bbox = windows[index]
+                bbox = self._map_scan_bbox_to_original(scan_bbox, scan_scale, gray.shape)
+                context_score = self._region_context_score(scan_gray, scan_bbox, feature_matrix[index])
                 final_score = raw_score + 0.7 * context_score
                 # 只有“本身异常”且“与周围上下文明显不一样”的窗口才保留下来。
                 if final_score < min_score + 0.4:
@@ -648,7 +664,7 @@ class TraditionalTamperDetector:
                         score=normalized_score,
                         label="局部篡改",
                         detail={
-                            "window_size": window_size,
+                            "window_size": mapped_window_size,
                             "raw_score": round(raw_score, 4),
                             "context_score": round(context_score, 4),
                             "final_score": round(final_score, 4),
@@ -667,19 +683,33 @@ class TraditionalTamperDetector:
         # 以便输出更贴近篡改文字而不是原始滑窗的矩形框。
         window_size = 24
         stride = 12
+        scan_gray, scan_scale, scan_window_size, scan_stride, mapped_window_size = self._prepare_dense_scan(
+            gray=gray,
+            window_size=window_size,
+            stride=stride,
+        )
+        if scan_window_size <= 0:
+            return []
         windows: list[tuple[int, int, int, int]] = []
         feature_rows: list[np.ndarray] = []
-        for y in range(0, gray.shape[0] - window_size + 1, stride):
-            for x in range(0, gray.shape[1] - window_size + 1, stride):
-                feature_rows.append(self._region_feature_vector(gray[y : y + window_size, x : x + window_size]))
-                windows.append((x, y, window_size, window_size))
+        for y in range(0, scan_gray.shape[0] - scan_window_size + 1, scan_stride):
+            for x in range(0, scan_gray.shape[1] - scan_window_size + 1, scan_stride):
+                feature_rows.append(
+                    self._region_feature_vector(
+                        scan_gray[y : y + scan_window_size, x : x + scan_window_size]
+                    )
+                )
+                windows.append((x, y, scan_window_size, scan_window_size))
 
         if len(windows) < 8:
             return []
 
         scores = self._robust_scores(np.asarray(feature_rows, dtype=np.float32))
         hot_windows = [
-            (float(scores[index]), windows[index])
+            (
+                float(scores[index]),
+                self._map_scan_bbox_to_original(windows[index], scan_scale, gray.shape),
+            )
             for index in range(len(windows))
             if float(scores[index]) >= 4.2
         ]
@@ -711,7 +741,9 @@ class TraditionalTamperDetector:
             snapped_seen.append(snapped_bbox)
 
             base_score = float(np.log1p(max(score, 0.0)))
-            box_area_ratio = (snapped_bbox[2] * snapped_bbox[3]) / float(window_size * window_size)
+            box_area_ratio = (snapped_bbox[2] * snapped_bbox[3]) / float(
+                mapped_window_size * mapped_window_size
+            )
             # 贴合后的文字框如果放大太多，往往意味着热点抓到的是大片纹理或背景，
             # 因此这里对过大的文字框加一个面积惩罚。
             size_penalty = 0.22 * max(box_area_ratio - 2.5, 0.0)
@@ -725,7 +757,7 @@ class TraditionalTamperDetector:
                     score=final_score,
                     label="文字篡改",
                     detail={
-                        "window_size": window_size,
+                        "window_size": mapped_window_size,
                         "raw_score": round(base_score, 4),
                         "support_count": support_count,
                         "size_penalty": round(size_penalty, 4),
@@ -738,10 +770,111 @@ class TraditionalTamperDetector:
                 gray=gray,
                 hot_windows=hot_windows,
                 component_boxes=component_boxes,
-                window_size=window_size,
+                window_size=mapped_window_size,
             )
         )
         return results
+
+    def _prepare_dense_scan(
+        self,
+        gray: np.ndarray,
+        window_size: int,
+        stride: int,
+    ) -> tuple[np.ndarray, float, int, int, int]:
+        image_height, image_width = gray.shape
+        max_side = max(image_height, image_width)
+        max_scan_side = max(64, int(self.GLOBAL_SCAN_MAX_SIDE))
+        scale = 1.0
+        scan_gray = gray
+        if max_side > max_scan_side:
+            scale = max_scan_side / float(max_side)
+            scan_width = max(1, int(round(image_width * scale)))
+            scan_height = max(1, int(round(image_height * scale)))
+            scan_gray = cv2.resize(
+                gray,
+                (scan_width, scan_height),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        min_window = max(4, int(self.GLOBAL_SCAN_MIN_WINDOW))
+        min_stride = max(1, int(self.GLOBAL_SCAN_MIN_STRIDE))
+        scan_window_size = max(min_window, int(round(window_size * scale)))
+        scan_window_size = min(scan_window_size, scan_gray.shape[0], scan_gray.shape[1])
+        if scan_window_size < 4:
+            return scan_gray, scale, 0, 0, 0
+
+        scan_stride = max(min_stride, int(round(stride * scale)))
+        scan_stride = min(scan_stride, scan_window_size)
+        scan_stride = self._fit_dense_scan_stride(
+            image_shape=scan_gray.shape,
+            window_size=scan_window_size,
+            stride=scan_stride,
+        )
+        mapped_window_size = max(1, int(round(scan_window_size / max(scale, 1e-6))))
+        return scan_gray, scale, scan_window_size, scan_stride, mapped_window_size
+
+    def _fit_dense_scan_stride(
+        self,
+        image_shape: tuple[int, int],
+        window_size: int,
+        stride: int,
+    ) -> int:
+        max_windows = int(self.GLOBAL_SCAN_MAX_WINDOWS)
+        if max_windows <= 0:
+            return stride
+        current_stride = max(1, stride)
+        while (
+            self._dense_scan_window_count(image_shape, window_size, current_stride)
+            > max_windows
+        ):
+            current_stride += max(1, current_stride // 4)
+        return current_stride
+
+    @staticmethod
+    def _dense_scan_window_count(
+        image_shape: tuple[int, int],
+        window_size: int,
+        stride: int,
+    ) -> int:
+        image_height, image_width = image_shape
+        if window_size <= 0 or stride <= 0:
+            return 0
+        if image_height < window_size or image_width < window_size:
+            return 0
+        row_count = (image_height - window_size) // stride + 1
+        col_count = (image_width - window_size) // stride + 1
+        return int(row_count * col_count)
+
+    @staticmethod
+    def _map_scan_bbox_to_original(
+        bbox: tuple[int, int, int, int],
+        scale: float,
+        original_shape: tuple[int, int],
+    ) -> tuple[int, int, int, int]:
+        if scale >= 0.999:
+            return bbox
+        x, y, w, h = bbox
+        inverse_scale = 1.0 / max(scale, 1e-6)
+        mapped = (
+            int(round(x * inverse_scale)),
+            int(round(y * inverse_scale)),
+            int(round(w * inverse_scale)),
+            int(round(h * inverse_scale)),
+        )
+        return TraditionalTamperDetector._clip_bbox_to_image(mapped, original_shape)
+
+    @staticmethod
+    def _clip_bbox_to_image(
+        bbox: tuple[int, int, int, int],
+        image_shape: tuple[int, int],
+    ) -> tuple[int, int, int, int]:
+        x, y, w, h = bbox
+        image_height, image_width = image_shape
+        x0 = max(0, min(image_width - 1, x))
+        y0 = max(0, min(image_height - 1, y))
+        x1 = max(1, min(image_width, x + w))
+        y1 = max(1, min(image_height, y + h))
+        return x0, y0, max(1, x1 - x0), max(1, y1 - y0)
 
     def _enumerate_text_block_regions(
         self,

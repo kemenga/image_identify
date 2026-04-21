@@ -1,0 +1,22 @@
+{
+  "id": "doc_0001_t02_cross_doc_splice",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0001_orig.png",
+  "tampered_image": "tampered/doc_0001_t02_cross_doc_splice.png",
+  "label_png": "labels_png/doc_0001_t02_cross_doc_splice检测结果.png",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+  "tamper_method": "cross_doc_splice",
+  "boxes": [
+    {
+      "x": 1229,
+      "y": 3138,
+      "w": 205,
+      "h": 553,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "跨文档裁切文本块拼接"
+}

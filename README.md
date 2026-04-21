@@ -25,6 +25,12 @@ pip install -r requirements.txt
 python main.py --image ./data/截图.png --output ./detected_result.png --report ./detected_report.json
 python main.py --image ./data/截图.png --output ./detected_result.png --report ./detected_report.json --evidence-output-dir ./evidence_maps
 python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8
+python dataset_builder.py --dataset-root ./seed_dataset search --docs-target 2 --natural-target 2
+python dataset_builder.py --dataset-root ./seed_dataset download --docs-target 2 --natural-target 2
+python dataset_builder.py --dataset-root ./seed_dataset tamper --seed 42
+python dataset_builder.py --dataset-root ./seed_dataset label
+python dataset_builder.py --dataset-root ./seed_dataset verify
+python evaluation.py --data-dir ./seed_dataset --report ./seed_dataset/manifests/evaluation_report.json --iou-threshold 0.3 --max-detections 2
 ```
 
 如果你要直接调融合权重、文字噪声阈值、数字窗口阈值等内部参数，可以先看完整 CLI：
@@ -69,6 +75,60 @@ python main.py \
   --detector-report-confidence-threshold 68
 ```
 
+## 开放许可数据集生成
+
+仓库现在额外提供 `dataset_builder.py`，用于自动搜索开放许可原图，再在本地生成篡改图和标签。它不会下载已经篡改过的图片，默认只接受可修改和再分发的许可：
+
+- `CC0`
+- `Public Domain`
+- `CC BY`
+- `CC BY-SA`
+
+以下情况会被默认拒绝：
+
+- `NC`
+- `ND`
+- 许可缺失
+- 标题或描述中包含 `edited`、`photoshop`、`composite`、`collage`、`manipulation`、`render`、`AI-generated`
+
+默认目录结构如下：
+
+- `seed_dataset/manifests/`
+- `seed_dataset/originals/docs/`
+- `seed_dataset/originals/natural/`
+- `seed_dataset/tampered/`
+- `seed_dataset/labels_png/`
+- `seed_dataset/labels_json/`
+
+子命令职责如下：
+
+- `search`：调用 Openverse 和 Wikimedia Commons 搜索原图候选，并写出 `search_manifest.json`
+- `download`：下载候选原图，做分辨率过滤、许可过滤、感知哈希去重，以及文档类文字密度过滤
+- `tamper`：对每张原图固定生成 3 张本地篡改图
+- `label`：生成 `xxx检测结果.png` 和同名 JSON 标签
+- `verify`：检查尺寸一致性、标签路径、标注框越界和评测配对可用性
+
+文档类默认篡改方法：
+
+- `text_patch_replace`
+- `cross_doc_splice`
+- `copy_move_token`
+
+自然图默认篡改方法：
+
+- `copy_move_region`
+- `cross_image_splice`
+- `erase_and_fill`
+
+标签命名规则示例：
+
+- 原图：`doc_0001_orig.png`
+- 篡改图：`doc_0001_t01_text_patch_replace.png`
+- PNG 标签：`doc_0001_t01_text_patch_replace检测结果.png`
+- JSON 标签：`doc_0001_t01_text_patch_replace.json`
+
+当前 `evaluation.py` 已兼容 `seed_dataset/` 结构，直接传 `--data-dir ./seed_dataset` 就会自动读取 `tampered/` 和 `labels_png/` 中的配对样本。
+
 ## Python API
 
 ```python
@@ -99,6 +159,7 @@ for item in result.detections:
 - `--detector-*`：覆盖融合层参数，例如 `--detector-global-evidence-weight`
 - `--detector-report-confidence-threshold`：覆盖 `REPORT_CONFIDENCE_THRESHOLD`，用于单点控制最终输出框数量
 - `--document-*`：覆盖文档规则层参数，例如 `--document-text-noise-threshold`
+- `--document-global-scan-max-side` / `--document-global-scan-max-windows`：控制大图全图滑窗的最长边缩放和窗口预算；大图卡顿时优先调低这两个值
 
 ## 标准答案评测
 
@@ -111,6 +172,13 @@ python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-t
 标准答案图中优先抽取红色标注框；当标准答案图和原图尺寸不一致时，会先用 ORB 特征匹配和仿射变换自动对齐，再结合与红框重叠的黄色或橙色外层标注稳定框范围。对齐不足 50 个匹配点、RANSAC 内点比例低于 `0.55` 或缩放比例不在 `0.5-2.0` 时会直接报错，避免静默跳过问题样例。
 
 评测报告包含每张图的标准框、检测框、命中情况、召回率、误报数和平均最佳 IoU。当前 `data/` 中只要存在对应 `xxx检测结果.png`，就会自动进入量化统计，因此 `400.png` 这类新增短信变体也会自动进入硬回归。
+
+从 2026-04-21 起，`image.png`、`image4.png`、`image5.png` 也被纳入显式评测断言，并且已经进入与旧样例同一套硬门槛。当前本地基线是：
+
+- `image.png`：7 个标准框全部命中，最终输出会同时使用 `invoice_token_patch` 与原有 `invoice_large_text_field`。
+- `image4.png`：3 个标准框全部命中，最终结果会保留 1 个 `digit_window` 和 2 个 `component_patch_overlay`。
+- `image5.png`：3 个标准框全部命中，最终结果收敛为 3 个 `message_bubble_patch`。
+- 全集评测：`Recall@IoU0.3 = 0.9630`，总误报数 `= 2`。
 
 ## 输出说明
 
@@ -136,6 +204,12 @@ python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-t
 
 当前默认输出采用“召回不降 + 报告过滤”的平衡策略：内部仍保留完整候选池用于调试，但最终 `detections` 和 `top_candidates` 只展示通过报告级过滤的候选，尽量避免把正确文字直接画框或写进报告。报告级过滤的数量语义统一由 `REPORT_CONFIDENCE_THRESHOLD` 控制：调高阈值只能让输出数量减少或保持不变，调低阈值只能让输出数量增加或保持不变；其他链路只负责候选合法性、同一区域去重和显式上限截断，不能再额外承担“隐藏阈值”的数量控制职责。
 当显式传入该阈值时，单阈值模式还会对候选质量做额外加权，高阈值下优先保留时间框、数字框、证件精确字段、发票主字段和真实短信噪声框，而不是把纯粹分值高但语义较弱的碎片热点排到前面。
+
+围绕新增漏检样本，当前文档型候选策略可以概括成三层：
+
+- 专用候选：`time_group`、`digit_window` 这类语义最强的场景规则，优先解决截图时间和票据数字。
+- 文本候选：`text_region`、`text_noise_anomaly` 负责承接发票、多字段清单和局部文字噪声异常，是 `image.png`、`image4.png`、`image5.png` 当前最主要的候选来源。
+- 兜底候选：`region_anomaly` 仍保留在候选池里兜底，但当前新样例的最终输出已经不再依赖它。
 
 从验收口径看，`REPORT_CONFIDENCE_THRESHOLD` 同时承担数量和质量约束：数量上必须单调收紧，质量上必须避免高置信错误候选压过已知正确场景候选。也就是说，高阈值过滤后的 `detections` 和 `top_candidates` 应该更像“可信候选清单”，而不是“错误候选也能凭高分留下”的原始排序结果。
 

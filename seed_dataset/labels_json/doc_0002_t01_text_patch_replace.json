@@ -1,0 +1,22 @@
+{
+  "id": "doc_0002_t01_text_patch_replace",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0002_orig.png",
+  "tampered_image": "tampered/doc_0002_t01_text_patch_replace.png",
+  "label_png": "labels_png/doc_0002_t01_text_patch_replace检测结果.png",
+  "license": "Public domain",
+  "license_url": "",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+  "tamper_method": "text_patch_replace",
+  "boxes": [
+    {
+      "x": 3665,
+      "y": 497,
+      "w": 91,
+      "h": 71,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "局部遮盖并写入新的短文本"
+}

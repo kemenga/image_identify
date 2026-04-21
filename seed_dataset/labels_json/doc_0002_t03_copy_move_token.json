@@ -1,0 +1,22 @@
+{
+  "id": "doc_0002_t03_copy_move_token",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0002_orig.png",
+  "tampered_image": "tampered/doc_0002_t03_copy_move_token.png",
+  "label_png": "labels_png/doc_0002_t03_copy_move_token检测结果.png",
+  "license": "Public domain",
+  "license_url": "",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+  "tamper_method": "copy_move_token",
+  "boxes": [
+    {
+      "x": 3694,
+      "y": 2690,
+      "w": 766,
+      "h": 93,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "复制同图文本块并移动覆盖"
+}

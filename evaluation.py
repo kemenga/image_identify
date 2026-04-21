@@ -29,11 +29,39 @@ class AlignmentResult:
 
 def discover_image_pairs(data_dir: str | Path) -> list[ImagePair]:
     root = Path(data_dir)
+    pairs = _discover_flat_image_pairs(root)
+    structured_pairs = _discover_seed_dataset_pairs(root)
+    if not structured_pairs:
+        return pairs
+
+    known_images = {pair.image_path.resolve() for pair in pairs}
+    for pair in structured_pairs:
+        if pair.image_path.resolve() in known_images:
+            continue
+        pairs.append(pair)
+    return sorted(pairs, key=lambda item: item.image_path.name)
+
+
+def _discover_flat_image_pairs(root: Path) -> list[ImagePair]:
     pairs: list[ImagePair] = []
     for image_path in sorted(root.glob("*.png")):
         if "检测结果" in image_path.stem:
             continue
         answer_path = image_path.with_name(f"{image_path.stem}检测结果{image_path.suffix}")
+        if answer_path.exists():
+            pairs.append(ImagePair(image_path=image_path, answer_path=answer_path))
+    return pairs
+
+
+def _discover_seed_dataset_pairs(root: Path) -> list[ImagePair]:
+    tampered_dir = root / "tampered"
+    labels_dir = root / "labels_png"
+    if not tampered_dir.exists() or not labels_dir.exists():
+        return []
+
+    pairs: list[ImagePair] = []
+    for image_path in sorted(tampered_dir.glob("*.png")):
+        answer_path = labels_dir / f"{image_path.stem}检测结果{image_path.suffix}"
         if answer_path.exists():
             pairs.append(ImagePair(image_path=image_path, answer_path=answer_path))
     return pairs

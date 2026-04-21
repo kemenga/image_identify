@@ -1,0 +1,22 @@
+{
+  "id": "doc_0002_t02_cross_doc_splice",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0002_orig.png",
+  "tampered_image": "tampered/doc_0002_t02_cross_doc_splice.png",
+  "label_png": "labels_png/doc_0002_t02_cross_doc_splice检测结果.png",
+  "license": "Public domain",
+  "license_url": "",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Chichester_local_rates_bill_1929.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Chichester_local_rates_bill_1929.jpg",
+  "tamper_method": "cross_doc_splice",
+  "boxes": [
+    {
+      "x": 4096,
+      "y": 555,
+      "w": 93,
+      "h": 104,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "跨文档裁切文本块拼接"
+}

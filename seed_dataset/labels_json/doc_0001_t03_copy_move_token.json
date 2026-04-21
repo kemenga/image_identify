@@ -1,0 +1,22 @@
+{
+  "id": "doc_0001_t03_copy_move_token",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0001_orig.png",
+  "tampered_image": "tampered/doc_0001_t03_copy_move_token.png",
+  "label_png": "labels_png/doc_0001_t03_copy_move_token检测结果.png",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+  "tamper_method": "copy_move_token",
+  "boxes": [
+    {
+      "x": 564,
+      "y": 3138,
+      "w": 427,
+      "h": 553,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "复制同图文本块并移动覆盖"
+}

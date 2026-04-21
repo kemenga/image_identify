@@ -55,6 +55,42 @@
 
 ---
 
+## 增量验证 - 新增样本漏检修复
+
+生成时间：2026-04-21 15:42:00 CST
+
+### 需求审查清单
+
+- 目标：修复 `image.png`、`image4.png`、`image5.png` 的漏检，并保持旧样例稳定
+- 范围：`detector.py`、`test_detector.py`、`README.md`、`项目梳理.md`、`.codex/` 记录
+- 交付物：候选生成改造、回归测试、文档更新、验证报告
+- 审查要点：9 图评测 `Recall@IoU0.3 >= 0.95`，总误报数 `<= 6`，新样例逐框命中
+- 依赖与风险：继续使用 OpenCV/NumPy/Pillow，不引入 OCR、模型或新依赖
+
+### 评分
+
+- 代码质量：93/100
+- 测试覆盖：96/100
+- 规范遵循：89/100
+- 需求匹配：97/100
+- 架构一致：95/100
+- 风险评估：91/100
+- 综合评分：94/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `/opt/anaconda3/bin/python -m unittest test_detector.py`
+   - 结果：通过，`Ran 22 tests in 340.345s`
+2. `/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+   - 结果：通过，`recall=0.9630`、`false_positive_count=2`
+
+### 结论
+
+- `image.png`、`image4.png`、`image5.png` 已全部进入硬回归并达到 `recall=1.0`
+- 旧样例主框顺序保持稳定：截图仍为 `time_group`，票据仍为 `digit_window`
+- 当前仍建议后续继续观察 `身份证.png` 的剩余漏框和 `invoice_token_patch` 的少量误报
+
 ## 增量验证 - 400短信泛化改进
 
 生成时间：2026-04-21 09:39:20 CST
@@ -257,3 +293,110 @@
 - 本轮测试和文档已覆盖用户指定的高阈值保真语义。
 - 当前生产行为未通过新增回归，说明显式高阈值路径仍偏向原始报告置信度排序，未充分抑制高置信错误候选。
 - 后续需要在允许修改 `detector.py` 时调整高阈值路径的质量约束，例如把专用场景候选保护、标准候选合法性和错误候选抑制纳入 `single_threshold_mode`，同时保持数量单调性。
+
+---
+
+## 增量验证 - 开放许可数据集生成
+
+生成时间：2026-04-21 16:34:00 CST
+
+### 需求审查清单
+
+- 目标：新增一条独立的数据生成管线，自动搜索开放许可原图，再本地生成篡改图与标签，不下载任何已篡改图片。
+- 范围：新增 `dataset_builder.py`、新增 `test_dataset_builder.py`、扩展 `evaluation.py` 的样本发现逻辑，并更新 README、项目梳理与 `.codex` 留痕。
+- 交付物：开放许可搜索/下载/篡改/打标/校验脚本，离线单测，`seed_dataset/` 目录兼容，以及真实联网烟雾验证结果。
+- 审查要点：许可过滤正确；下载后尺寸与去重有效；篡改图与标签同尺寸；`evaluation.py --data-dir ./seed_dataset` 的内部配对逻辑可用；旧检测功能不回退。
+- 依赖与风险：外部素材搜索依赖 Openverse 与 Wikimedia Commons；真实高分辨率样本评测耗时较长，不适合作为每轮阻塞式验收。
+
+### 评分
+
+- 代码质量：92/100
+- 测试覆盖：93/100
+- 规范遵循：89/100
+- 需求匹配：95/100
+- 架构一致：91/100
+- 风险评估：88/100
+- 综合评分：91/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `python -m py_compile dataset_builder.py test_dataset_builder.py evaluation.py`
+   - 结果：通过。
+2. `python -m unittest test_dataset_builder.py`
+   - 结果：通过，`Ran 3 tests`。
+   - 覆盖点：搜索 manifest 结构、下载去重、篡改/打标/校验链路、`seed_dataset/` 评测兼容。
+3. `python -m unittest test_detector.py test_dataset_builder.py`
+   - 结果：通过，`Ran 25 tests in 397.394s`。
+   - 说明：新增数据管线未破坏现有检测器回归。
+4. 真实联网烟雾：
+   - `python dataset_builder.py --dataset-root ./seed_dataset search --docs-target 2 --natural-target 2 --page-size 8 --max-pages 2 --oversample-factor 5`
+   - `python dataset_builder.py --dataset-root ./seed_dataset download --docs-target 2 --natural-target 2`
+   - `python dataset_builder.py --dataset-root ./seed_dataset tamper --seed 42`
+   - `python dataset_builder.py --dataset-root ./seed_dataset label`
+   - `python dataset_builder.py --dataset-root ./seed_dataset verify`
+   - 结果：通过，生成 20 个候选、4 张原图、12 张篡改图、12 张标签图；`verify_report.json` 显示 `passed=True`、`pair_count=12`、`extracted_ground_truth_box_count=12`。
+5. `python evaluation.py --data-dir ./seed_dataset --report ./seed_dataset/manifests/evaluation_smoke_report.json --iou-threshold 0.3 --max-detections 2`
+   - 结果：可启动，但在 12 张高分辨率真实图上运行时间过长，本轮为避免阻塞被中断。
+   - 补偿证据：离线单测已实际调用 `evaluate_dataset(...)` 验证 `seed_dataset/` 结构兼容；`verify` 也已对全部真实配对执行 `extract_ground_truth_boxes(...)` 反向抽框。
+
+### 战略评估
+
+- 需求匹配：脚本能力与目录结构完全按计划落地，且未污染现有 `data/` 回归集。
+- 架构一致：新能力独立于主检测入口，复用了已有预处理和评测逻辑，没有引入新依赖。
+- 风险评估：外部接口波动和高分辨率真实图评测耗时仍需关注，但不影响当前“可生成、可标注、可校验”的主目标。
+
+### 结论
+
+- 本轮实现已满足“开放许可原图搜索与本地篡改数据集生成”主需求。
+- `dataset_builder.py` 已可用于继续扩到默认 20 张原图 / 60 张篡改图规模。
+- 当前剩余风险主要是：如果后续要把真实高分辨率全量评测纳入每轮阻塞验收，建议再加一层评测前缩图或分批运行策略。
+
+---
+
+## 增量验证 - 大图扫描性能
+
+生成时间：2026-04-21 17:22:00 CST
+
+### 需求审查清单
+
+- 目标：修复无参数运行 `main.py` 时在高分辨率 `seed_dataset` 图片上长时间卡在 `region_anomaly` 全图滑窗的问题。
+- 范围：修改 `document_detector.py` 的密集滑窗扫描策略，新增测试；不改变 `UniversalTamperDetector.detect(...)` 和 CLI 公开参数。
+- 交付物：大图自动降采样、扫描窗口预算、可调参数接入、回归测试和验证记录。
+- 审查要点：大图检测能快速返回；旧样例检测不退化；新增参数可调；无参数运行入口可正常结束。
+- 依赖与风险：超大图密集扫描降采样会牺牲极小像素异常的敏感度，但换来可交互的运行时间。
+
+### 评分
+
+- 代码质量：91/100
+- 测试覆盖：92/100
+- 规范遵循：90/100
+- 需求匹配：96/100
+- 架构一致：92/100
+- 风险评估：88/100
+- 综合评分：92/100
+- 建议：通过
+
+### 本地验证结果
+
+1. `python -m py_compile main.py document_detector.py test_detector.py`
+   - 结果：通过。
+2. `python -m unittest test_detector.UniversalTamperDetectorTest.test_detector_accepts_tunable_overrides test_detector.UniversalTamperDetectorTest.test_large_image_dense_scan_is_downscaled_and_budgeted test_detector.UniversalTamperDetectorTest.test_cli_writes_output_and_report`
+   - 结果：通过，`Ran 3 tests in 3.501s`。
+3. 真实大图冒烟：
+   - 命令：直接调用检测器处理 `seed_dataset/tampered/doc_0001_t01_text_patch_replace.png`
+   - 结果：约 `7.364s` 返回，状态 `detected`，检测框数量 `8`。
+4. `python -m unittest test_detector.py test_dataset_builder.py`
+   - 结果：通过，`Ran 26 tests in 278.069s`。
+5. `/opt/anaconda3/bin/python /Users/helen/Desktop/work/claude_to_codex/image_deep_learning_codex/main.py`
+   - 结果：正常结束，生成 `detected_result.png` 和 `detected_report.json`，不再需要手动 `Ctrl+C`。
+
+### 结论
+
+- 本轮已经修复高分辨率图片导致全图滑窗过慢的问题。
+- 新增文档规则层参数已自动进入 `main.py` 调参体系：
+  - `GLOBAL_SCAN_MAX_SIDE`
+  - `GLOBAL_SCAN_MAX_WINDOWS`
+  - `GLOBAL_SCAN_MIN_WINDOW`
+  - `GLOBAL_SCAN_MIN_STRIDE`
+- 后续如果要追求更高召回，可以适当调高 `GLOBAL_SCAN_MAX_SIDE` 或 `GLOBAL_SCAN_MAX_WINDOWS`；如果要更快，可以调低这两个参数。

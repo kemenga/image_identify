@@ -238,6 +238,257 @@
 - 09:20 工具：`/opt/anaconda3/bin/python -m unittest test_detector.py`
   参数：执行单元测试和 CLI 回归
   输出摘要：16 项测试全部通过，说明专用规则优先补丁未引入语法或流程回归
+
+## 编码前检查 - 新增样本漏检修复
+
+时间：2026-04-21 15:02:08 CST
+
+- 已查阅上下文摘要文件：`.codex/context-summary-新增样本漏检修复.md`
+- 将使用以下可复用组件：
+  - `detector.py::_build_evidence_text_noise_candidates`：沿用融合层追加候选入口
+  - `detector.py::_build_invoice_field_candidates`：保留现有发票字段候选并在其内部继续拆分
+  - `document_detector.py::_text_component_boxes` 与 `_group_text_components_by_row`：作为贴片/消息气泡候选的组件基础
+  - `detector.py::_reportable_candidates`：继续统一排序、阈值、限流和去重
+  - `evaluation.py::evaluate_dataset`：作为最终召回与误报验收口径
+- 将遵循命名约定：继续使用 `snake_case` 和现有 `zone` 风格命名
+- 将遵循代码风格：中文注释、4 空格缩进、公开 API 不变
+- 确认不重复造轮子，证明：已检查 `detector.py`、`document_detector.py`、`evaluation.py`、`test_detector.py`，当前确实缺少组件簇贴片候选和字段内 token 拆分
+
+## 过程记录 - 新增样本漏检修复
+
+- 15:00 工具：`rg` / `sed` / `python`
+  参数：检查 `detector.py`、`document_detector.py`、`evaluation.py`、`test_detector.py` 与 `data/*.png`
+
+## 编码前检查 - 开放许可数据集生成
+
+时间：2026-04-21 16:09:00 CST
+
+- 已查阅上下文摘要文件：`.codex/context-summary-开放许可数据集生成.md`
+- 将使用以下可复用组件：
+  - `main.py`：沿用 `argparse` 风格组织独立 CLI
+  - `preprocessing.py::detect_text_lines` 与 `segment_line_characters`：用于文档类原图文字密度过滤和局部篡改选框
+  - `evaluation.py::discover_image_pairs` 与 `extract_ground_truth_boxes`：用于 `seed_dataset/` 标签配对和反向抽框校验
+  - `test_detector.py`：沿用 `unittest + tempfile` 的本地离线测试风格
+- 将遵循命名约定：Python `snake_case`、清单文件统一使用 `*_manifest.json`
+- 将遵循代码风格：中文注释说明意图，导入顺序保持“标准库/第三方/本地模块”
+- 确认不重复造轮子，证明：已检查 `evaluation.py`、`preprocessing.py`、`main.py`、`test_detector.py`，仓库内不存在现成的开放许可抓取和本地篡改数据管线
+
+## 过程记录 - 开放许可数据集生成
+
+- 16:10 工具：`sed` / `rg`
+  参数：复查 `evaluation.py`、`preprocessing.py`、`main.py`、`test_detector.py`、`README.md`、`项目梳理.md`
+  输出摘要：确认现有评测只支持顶层配对，文档类文字检测能力可直接复用，测试框架适合新增离线数据管线测试
+- 16:12 工具：`python`
+  参数：带 `User-Agent` 直连 Openverse API 与 Wikimedia Commons API 试探字段
+  输出摘要：确认两类源都能返回标题、许可、下载 URL 和尺寸信息；默认 `urllib` 请求头会触发 403，需要统一网络请求封装
+- 16:15 工具：`apply_patch`
+  参数：新增 `dataset_builder.py`
+  输出摘要：实现 `search`、`download`、`tamper`、`label`、`verify` 五个子命令，接入许可过滤、感知哈希去重、文档文字密度过滤、本地篡改生成和标签导出
+- 16:17 工具：`apply_patch`
+  参数：修改 `evaluation.py`
+  输出摘要：新增 `seed_dataset/tampered` 与 `seed_dataset/labels_png` 的结构化样本发现逻辑，保持原有 `data/*.png + 检测结果.png` 行为不变
+- 16:18 工具：`apply_patch`
+  参数：新增 `test_dataset_builder.py`
+  输出摘要：补充离线单测，覆盖搜索 manifest、下载去重、篡改/打标/校验链路以及 `seed_dataset/` 评测兼容性
+- 16:19 工具：`python -m py_compile dataset_builder.py test_dataset_builder.py evaluation.py`
+  参数：执行语法校验
+  输出摘要：全部通过
+- 16:20 工具：`python -m unittest test_dataset_builder.py`
+  参数：执行新增离线单元测试
+  输出摘要：3 项测试全部通过
+- 16:18-16:22 工具：`python dataset_builder.py`
+  参数：联网执行 `search --docs-target 2 --natural-target 2`、`download`、`tamper --seed 42`、`label`、`verify`
+  输出摘要：真实生成 4 张原图、12 张篡改图和 12 张标签图；`verify_report.json` 显示 `passed=True`、`pair_count=12`、`extracted_ground_truth_box_count=12`
+- 16:23 工具：`python evaluation.py --data-dir ./seed_dataset`
+  参数：对真实高分辨率烟雾集执行同口径评测
+  输出摘要：评测可启动，但在 12 张高分辨率真实图上运行时间过长；为避免阻塞后续回归验证，已中断该轮长时间运行，保留离线兼容测试和真实配对校验作为本轮验收证据
+- 16:26 工具：`python -m unittest test_detector.py test_dataset_builder.py`
+  参数：执行全量本地回归
+  输出摘要：25 项测试全部通过，说明新增数据管线和评测兼容未破坏现有检测功能
+- 16:29 工具：`apply_patch`
+  参数：更新 `README.md` 与 `项目梳理.md`
+  输出摘要：补充开放许可数据集生成脚本用法、目录结构、许可策略、篡改方法和 `seed_dataset/` 评测兼容说明
+
+## 编码后声明 - 开放许可数据集生成
+
+时间：2026-04-21 16:33:00 CST
+
+### 1. 复用了以下既有组件
+
+- `preprocessing.py::detect_text_lines`：用于文档类原图过滤
+- `preprocessing.py::segment_line_characters`：用于文档局部 token 选框和局部篡改
+- `evaluation.py::discover_image_pairs` / `extract_ground_truth_boxes`：用于新数据目录结构的标签抽框验证
+- `test_detector.py` 的 `unittest` 风格：用于新增 `test_dataset_builder.py`
+
+### 2. 遵循了以下项目约定
+
+- 命名约定：新增脚本使用 `snake_case`，输出清单统一为 `search_manifest.json`、`original_manifest.json`、`tamper_manifest.json`、`verify_report.json`
+- 代码风格：中文注释解释意图和约束，CLI 帮助文本统一使用简体中文
+- 文件组织：新增能力独立放在 `dataset_builder.py` 和 `seed_dataset/`，未改动主检测公开 API
+
+### 3. 对比了以下相似实现
+
+- `main.py`：沿用统一默认值 + 子命令参数解析思路
+- `evaluation.py`：沿用自动发现样本对的模式，并在内部扩展而不是新写第二套评测入口
+- `preprocessing.py`：沿用已有文字结构分析，而不是自研另一套文档文字检测器
+
+### 4. 未重复造轮子的证明
+
+- 检查了现有仓库根目录和 `.codex` 记录，未发现开放许可原图搜索、本地篡改数据生成和标签导出的既有脚本
+- 本次实现复用了已有预处理和评测能力，没有重新实现文本行检测和标准答案抽框
+
+### 5. 工具偏差说明
+
+- 仓库规范中提到的 `desktop-commander`、`context7`、`github.search_code`、`sequential-thinking`、`shrimp-task-manager` 当前环境未提供
+- 已使用本地代码检索、官方 API 文档、真实联网冒烟和本地 `unittest` 完成等效上下文分析与验证，并在本日志中留痕
+
+## 编码前检查 - 大图扫描性能
+
+时间：2026-04-21 17:05:00 CST
+
+- 已查阅上下文摘要文件：`.codex/context-summary-大图扫描性能.md`
+- 将使用以下可复用组件：
+  - `document_detector.py::_enumerate_region_anomalies`：保留候选生成逻辑，只控制输入扫描密度
+  - `document_detector.py::_enumerate_text_window_anomalies`：保留文字热点和组件贴合逻辑，只控制密集滑窗数量
+  - `document_detector.py::_region_feature_vector`：继续使用既有窗口特征
+  - `test_detector.py`：新增大图扫描预算回归
+- 将遵循命名约定：新增可调参数使用 `GLOBAL_SCAN_MAX_SIDE`、`GLOBAL_SCAN_MAX_WINDOWS`、`GLOBAL_SCAN_MIN_WINDOW`、`GLOBAL_SCAN_MIN_STRIDE`
+- 将遵循代码风格：中文注释、4 空格缩进、公开 API 不变
+- 确认不重复造轮子，证明：已检查现有全图滑窗和热点采集逻辑，问题是扫描尺度缺少预算，不需要新增另一套检测器
+
+## 过程记录 - 大图扫描性能
+
+- 17:00 工具：`nl` / `rg` / `python`
+  参数：检查 `main.py` 默认图片、`document_detector.py` 全图滑窗实现，并统计 `seed_dataset` 大图窗口数量
+  输出摘要：当前高分辨率图约 `4130x5704`，24 像素窗口全图扫描约 `162582` 个，`text_window` 和 `region_anomaly` 各会跑一遍
+- 17:08 工具：`apply_patch`
+  参数：修改 `document_detector.py`
+  输出摘要：新增密集扫描降采样和窗口预算控制，超大图自动缩到最长边不超过 `1600`，每个密集扫描不超过 `12000` 个窗口
+- 17:10 工具：`apply_patch`
+  参数：修改 `test_detector.py`
+  输出摘要：新增大图扫描预算单测，并验证新参数可通过文档规则层覆盖
+- 17:12 工具：`python -m py_compile main.py document_detector.py test_detector.py`
+  参数：语法校验
+  输出摘要：通过
+- 17:13 工具：`python -m unittest test_detector...`
+  参数：执行新增扫描预算、参数覆盖和 CLI 输出相关测试
+  输出摘要：3 项测试全部通过
+- 17:14 工具：`python`
+  参数：直接检测 `seed_dataset/tampered/doc_0001_t01_text_patch_replace.png`
+  输出摘要：约 `7.364s` 返回，状态为 `detected`，不再卡在 `cv2.Canny`
+- 17:15 工具：`python -m unittest test_detector.py test_dataset_builder.py`
+  参数：执行全量本地回归
+  输出摘要：26 项测试全部通过，耗时 `278.069s`
+- 17:20 工具：`/opt/anaconda3/bin/python main.py`
+  参数：按用户同样方式无参数运行入口
+  输出摘要：命令正常结束，生成 `detected_result.png` 和 `detected_report.json`
+
+## 编码后声明 - 大图扫描性能
+
+时间：2026-04-21 17:21:00 CST
+
+### 1. 复用了以下既有组件
+
+- `document_detector.py::_region_feature_vector`：继续作为滑窗特征提取函数
+- `document_detector.py::_region_context_score`：继续作为区域上下文差异评分
+- `document_detector.py::_snap_text_cluster_to_components`：继续用于文字热点贴合组件
+- `test_detector.py`：沿用现有 `unittest` 回归模式
+
+### 2. 遵循了以下项目约定
+
+- 命名约定：新增调参项使用全大写类属性，自动接入 `main.py` 的 `--document-*` 参数
+- 代码风格：新增代码为私有辅助函数，不改变公开 API
+- 文件组织：性能修复集中在文档规则层，入口层无需新增专门参数
+
+### 3. 对比了以下相似实现
+
+- `_enumerate_region_anomalies`：保留原始评分和候选结构，仅改扫描图与窗口坐标映射
+- `_enumerate_text_window_anomalies`：保留原始热点排序、组件贴合和证件区域聚合，仅把热点框映射回原图
+- `TraditionalTamperDetector.tunable_defaults`：沿用既有参数外露模式，把新性能参数接入调参区
+
+### 4. 未重复造轮子的证明
+
+- 检查了 `document_detector.py`，现有检测逻辑可复用，瓶颈只在大图密集扫描没有预算控制
+- 本次没有新增新检测器或新依赖，只在既有全图滑窗入口前增加尺寸和数量约束
+  输出摘要：确认 `image.png`、`image4.png`、`image5.png` 的问题根因在候选池覆盖不足，不是单纯报告过滤问题
+- 15:01 工具：`spawn_agent`
+  参数：并行启动 2 个 worker，分别负责 `detector.py` 与测试/文档/.codex`
+  输出摘要：已成功启动 `McClintock` 和 `Goodall` 两个子 agent，主代理负责方案锁定、集成与验收
+- 15:02 工具：`apply_patch`
+  参数：新增本轮 `.codex` 上下文摘要与验证报告模板，并记录编码前检查
+  输出摘要：完成本轮留痕初始化，后续将继续回填实现与验证结果
+- 15:05 工具：`apply_patch`
+  参数：修改 `detector.py`
+  输出摘要：新增组件簇贴片候选生成、消息卡片/票据/发票场景识别、子簇拆分、报告级 patch 候选排序和过滤规则
+- 15:12 工具：`python` 内联脚本
+  参数：逐张检查 `image.png`、`image4.png`、`image5.png` 的标准框、候选池最佳 IoU 和最终输出
+  输出摘要：确认 `image5.png` 初版仍抓错 token，于是继续放宽子簇拆分和尺寸变体；`image4.png` 已能打到 3 个标准框
+- 15:18 工具：`apply_patch`
+  参数：继续修改 `detector.py`
+  输出摘要：放宽组件贴片候选的尺寸变体去重，细化 `message_bubble_patch` 与 `component_patch_overlay` 的报告条件，补上 `image5.png` 中大灰底块和中间小数字块
+- 15:24 工具：`python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
+  参数：执行全量数据集评测
+  输出摘要：9 图评测通过，`recall=0.9630`、`false_positive_count=2`，`image.png`、`image4.png`、`image5.png` 全部达到 `recall=1.0`
+- 15:28 工具：`apply_patch`
+  参数：修改 `test_detector.py`、`README.md`、`项目梳理.md`
+  输出摘要：把子 agent 留下的“旧基线描述”更新为当前修复后的硬回归门槛，并补强新样本显式断言
+- 15:41 工具：`python -m unittest test_detector.py`
+  参数：执行完整本地回归
+  输出摘要：22 项测试全部通过，覆盖高阈值保真、CLI、热力图、标准答案评测和新增样本专项断言
+
+## 编码后声明 - 新增样本漏检修复
+
+时间：2026-04-21 15:42:00 CST
+
+### 1. 复用了以下既有组件
+
+- `document_detector.py::_text_component_boxes` 与 `_group_text_components_by_row`：复用文字组件和行分组，避免另写一套字符提取链路
+- `detector.py::_build_fused_evidence_map` 与 `_bbox_score`：复用证据图与局部证据打分
+- `evaluation.py::extract_ground_truth_boxes`、`evaluate_dataset`：复用现有标准答案抽框和量化评测口径
+- `test_detector.py` 既有高阈值、CLI、热力图回归：作为本轮改动的非退化保护网
+
+### 2. 遵循了以下项目约定
+
+- 命名约定：新增候选继续使用 `snake_case` 和 `zone` 标识，例如 `message_bubble_patch`
+- 代码风格：中文注释和文档、4 空格缩进、公开 API 不变
+- 文件组织：候选生成与排序逻辑集中在 `detector.py`，评测和文档分别落在现有测试/说明文件
+
+### 3. 对比了以下相似实现
+
+- `detector.py::_build_evidence_text_noise_candidates`：本轮沿用“融合层补候选”的思路，但把单一路径扩成组件簇贴片候选
+- `detector.py::_build_invoice_field_candidates`：继续保留字段级候选，同时在字段内部增加 token/按钮级补框
+- `test_detector.py::test_reportable_outputs_suppress_correct_text_false_positives`：从旧的误报抑制场景扩展到 `image.png`、`image4.png`、`image5.png`
+
+### 4. 未重复造轮子的证明
+
+- 没有新增 OCR、深度学习模型或第三方依赖
+- 没有改 `main.py`、`UniversalTamperDetector.detect(...)` 或 `detect_image_tamper(...)` 的公开调用方式
+- 新逻辑全部建立在现有文字组件、证据图和报告过滤框架之上
+
+## 编码前检查 - 开放许可数据集生成
+
+时间：2026-04-21 16:08:00 CST
+
+- 已查阅上下文摘要文件：`.codex/context-summary-开放许可数据集生成.md`
+- 将使用以下可复用组件：
+  - `preprocessing.py::load_image`、`detect_text_lines`、`segment_line_characters`：文档类原图筛选与局部文字篡改
+  - `evaluation.py::discover_image_pairs`、`evaluate_dataset`：复用现有评测链路
+  - `test_detector.py` 的 `unittest` 风格：新增数据集构建离线测试
+- 将遵循命名约定：脚本和测试使用 `snake_case`，文档与日志全部使用简体中文
+- 将遵循代码风格：4 空格缩进、中文注释只描述意图、公开 CLI 参数保持清晰直接
+- 确认不重复造轮子，证明：已检查仓库现有文件，当前没有搜索下载、篡改生成、标签生成或数据集校验脚本
+
+## 过程记录 - 开放许可数据集生成
+
+- 16:00 工具：`sed` / `python`
+  参数：阅读 `main.py`、`evaluation.py`、`preprocessing.py`、`test_detector.py`、`README.md`
+  输出摘要：确认项目风格、评测口径和可复用文本检测组件
+- 16:03 工具：`python` 内联脚本
+  参数：探查 Openverse API 与 Wikimedia Commons API 的实际可用端点和返回字段
+  输出摘要：确认 `https://api.openverse.org/v1/images/` 和 Commons `w/api.php` 均可直连，返回字段足够支撑许可过滤和下载
+- 16:08 工具：`apply_patch`
+  参数：新增本轮 `.codex` 上下文摘要并记录编码前检查
+  输出摘要：完成本轮留痕初始化，后续回填实现与验证结果
 - 09:21 工具：`/opt/anaconda3/bin/python evaluation.py --data-dir ./data --report ./evaluation_report.json --iou-threshold 0.3 --max-detections 8`
   参数：执行全量数据集评测
   输出摘要：`recall=0.9286`、`false_positive_count=0`，`400.png` 两处标准框均命中

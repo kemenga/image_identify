@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-04-21 16:45:47 CST",
+  "dataset_root": "seed_dataset",
+  "original_count": 3,
+  "tampered_count": 9,
+  "pair_count": 15,
+  "extracted_ground_truth_box_count": 15,
+  "duplicates": [],
+  "issues": [],
+  "extraction_failures": [],
+  "passed": true
+}

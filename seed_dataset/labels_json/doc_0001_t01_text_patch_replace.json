@@ -1,0 +1,22 @@
+{
+  "id": "doc_0001_t01_text_patch_replace",
+  "source_type": "docs",
+  "original_image": "originals/docs/doc_0001_orig.png",
+  "tampered_image": "tampered/doc_0001_t01_text_patch_replace.png",
+  "label_png": "labels_png/doc_0001_t01_text_patch_replace检测结果.png",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:A_TICKET_BY_SHENZHEN_SAFARI_PARK_(2).jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/38/A_TICKET_BY_SHENZHEN_SAFARI_PARK_%282%29.jpg",
+  "tamper_method": "text_patch_replace",
+  "boxes": [
+    {
+      "x": 563,
+      "y": 3138,
+      "w": 429,
+      "h": 553,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "局部遮盖并写入新的短文本"
+}

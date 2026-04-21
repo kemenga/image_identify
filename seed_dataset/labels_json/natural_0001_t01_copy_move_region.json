@@ -1,0 +1,22 @@
+{
+  "id": "natural_0001_t01_copy_move_region",
+  "source_type": "natural",
+  "original_image": "originals/natural/natural_0001_orig.png",
+  "tampered_image": "tampered/natural_0001_t01_copy_move_region.png",
+  "label_png": "labels_png/natural_0001_t01_copy_move_region检测结果.png",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "source_page_url": "https://commons.wikimedia.org/wiki/File:Storefront_in_SF.jpg",
+  "download_url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Storefront_in_SF.jpg",
+  "tamper_method": "copy_move_region",
+  "boxes": [
+    {
+      "x": 2851,
+      "y": 4916,
+      "w": 590,
+      "h": 590,
+      "role": "tampered_region"
+    }
+  ],
+  "notes": "复制同图局部区域并移动覆盖"
+}
